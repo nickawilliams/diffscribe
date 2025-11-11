@@ -51,16 +51,16 @@ func generateCandidates(c gitContext) []string {
 }
 
 func openAIConfig() llm.Config {
-	apiKey := strings.TrimSpace(viper.GetString("openai_api_key"))
+	apiKey := strings.TrimSpace(viper.GetString("api_key"))
 	if apiKey == "" {
 		apiKey = strings.TrimSpace(os.Getenv("OPENAI_API_KEY"))
 	}
 	return llm.Config{
 		APIKey:       apiKey,
-		Model:        strings.TrimSpace(viper.GetString("openai_model")),
-		BaseURL:      strings.TrimSpace(viper.GetString("openai_base_url")),
-		SystemPrompt: strings.TrimSpace(viper.GetString("openai_system_prompt")),
-		Temperature:  viper.GetFloat64("openai_temperature"),
+		Model:        strings.TrimSpace(viper.GetString("model")),
+		BaseURL:      strings.TrimSpace(viper.GetString("base_url")),
+		SystemPrompt: strings.TrimSpace(viper.GetString("system_prompt")),
+		Temperature:  viper.GetFloat64("temperature"),
 		MaxOutputs:   5,
 	}
 }

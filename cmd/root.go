@@ -26,19 +26,19 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default searches diffscribe.{yaml,json,toml})")
-	rootCmd.PersistentFlags().String("openai-api-key", "", "OpenAI API key")
-	rootCmd.PersistentFlags().String("openai-model", "", "OpenAI model identifier")
-	rootCmd.PersistentFlags().String("openai-base-url", "", "OpenAI base URL")
-	rootCmd.PersistentFlags().String("openai-system-prompt", "", "OpenAI system prompt override")
-	rootCmd.PersistentFlags().Float64("openai-temperature", 0.2, "OpenAI sampling temperature")
+	rootCmd.PersistentFlags().String("api-key", "", "LLM provider API key")
+	rootCmd.PersistentFlags().String("model", "", "LLM model identifier")
+	rootCmd.PersistentFlags().String("base-url", "", "LLM API base URL")
+	rootCmd.PersistentFlags().String("system-prompt", "", "LLM system prompt override")
+	rootCmd.PersistentFlags().Float64("temperature", 0.2, "LLM sampling temperature")
 
-	_ = viper.BindPFlag("openai_api_key", rootCmd.PersistentFlags().Lookup("openai-api-key"))
-	_ = viper.BindPFlag("openai_model", rootCmd.PersistentFlags().Lookup("openai-model"))
-	_ = viper.BindPFlag("openai_base_url", rootCmd.PersistentFlags().Lookup("openai-base-url"))
-	_ = viper.BindPFlag("openai_system_prompt", rootCmd.PersistentFlags().Lookup("openai-system-prompt"))
-	_ = viper.BindPFlag("openai_temperature", rootCmd.PersistentFlags().Lookup("openai-temperature"))
+	_ = viper.BindPFlag("api_key", rootCmd.PersistentFlags().Lookup("api-key"))
+	_ = viper.BindPFlag("model", rootCmd.PersistentFlags().Lookup("model"))
+	_ = viper.BindPFlag("base_url", rootCmd.PersistentFlags().Lookup("base-url"))
+	_ = viper.BindPFlag("system_prompt", rootCmd.PersistentFlags().Lookup("system-prompt"))
+	_ = viper.BindPFlag("temperature", rootCmd.PersistentFlags().Lookup("temperature"))
 
-	viper.SetDefault("openai_temperature", 0.2)
+	viper.SetDefault("temperature", 0.2)
 
 	rootCmd.AddCommand(genCmd)
 	rootCmd.AddCommand(completeCmd)
@@ -48,6 +48,12 @@ func initConfig() {
 	viper.SetEnvPrefix("diffscribe")
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.AutomaticEnv()
+
+	if viper.GetString("api_key") == "" {
+		if val := strings.TrimSpace(os.Getenv("OPENAI_API_KEY")); val != "" {
+			viper.Set("api_key", val)
+		}
+	}
 
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
