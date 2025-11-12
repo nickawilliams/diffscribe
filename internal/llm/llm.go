@@ -25,7 +25,7 @@ type Config struct {
 	Model        string
 	BaseURL      string
 	Temperature  float64
-	MaxOutputs   int
+	Quantity     int
 	SystemPrompt string
 	UserPrompt   string
 }
@@ -46,12 +46,12 @@ func GenerateCommitMessages(ctx context.Context, data Context, cfg Config) ([]st
 	if strings.TrimSpace(cfg.SystemPrompt) == "" {
 		return nil, errors.New("missing system prompt")
 	}
-	if cfg.MaxOutputs <= 0 {
-		return nil, errors.New("max outputs must be greater than zero")
+	if cfg.Quantity <= 0 {
+		return nil, errors.New("quantity must be greater than zero")
 	}
 	prompt := cfg.UserPrompt
 	if strings.TrimSpace(prompt) == "" {
-		prompt = buildPrompt(data, cfg.MaxOutputs)
+		prompt = buildPrompt(data, cfg.Quantity)
 	}
 	reqPayload := openAIRequest{
 		Model:       cfg.Model,
