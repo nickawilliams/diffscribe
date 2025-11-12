@@ -32,22 +32,12 @@ type Config struct {
 
 var httpClient = &http.Client{Timeout: 25 * time.Second}
 
+var ErrInvalidConfig = errors.New("llm: invalid config")
+
 // GenerateCommitMessages calls OpenAI and returns the suggested commit messages.
 func GenerateCommitMessages(ctx context.Context, data Context, cfg Config) ([]string, error) {
-	if strings.TrimSpace(cfg.APIKey) == "" {
-		return nil, errors.New("missing api key")
-	}
-	if strings.TrimSpace(cfg.Model) == "" {
-		return nil, errors.New("missing model identifier")
-	}
-	if strings.TrimSpace(cfg.BaseURL) == "" {
-		return nil, errors.New("missing base url")
-	}
-	if strings.TrimSpace(cfg.SystemPrompt) == "" {
-		return nil, errors.New("missing system prompt")
-	}
-	if cfg.Quantity <= 0 {
-		return nil, errors.New("quantity must be greater than zero")
+	if err := validateConfig(cfg); err != nil {
+		return nil, err
 	}
 	prompt := cfg.UserPrompt
 	if strings.TrimSpace(prompt) == "" {
@@ -122,6 +112,25 @@ func fallback(v, alt string) string {
 		return alt
 	}
 	return v
+}
+
+func validateConfig(cfg Config) error {
+	if strings.TrimSpace(cfg.APIKey) == "" {
+		return fmt.Errorf("%w: api key is required", ErrInvalidConfig)
+	}
+	if strings.TrimSpace(cfg.Model) == "" {
+		return fmt.Errorf("%w: model identifier is required", ErrInvalidConfig)
+	}
+	if strings.TrimSpace(cfg.BaseURL) == "" {
+		return fmt.Errorf("%w: base URL is required", ErrInvalidConfig)
+	}
+	if strings.TrimSpace(cfg.SystemPrompt) == "" {
+		return fmt.Errorf("%w: system prompt is required", ErrInvalidConfig)
+	}
+	if cfg.Quantity <= 0 {
+		return fmt.Errorf("%w: quantity must be greater than zero", ErrInvalidConfig)
+	}
+	return nil
 }
 
 type openAIRequest struct {
