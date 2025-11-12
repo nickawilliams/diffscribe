@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -26,44 +27,37 @@ type Config struct {
 	Temperature  float64
 	MaxOutputs   int
 	SystemPrompt string
+	UserPrompt   string
 }
-
-const (
-	defaultModel   = "gpt-4o-mini"
-	defaultBaseURL = "https://api.openai.com/v1/chat/completions"
-)
 
 var httpClient = &http.Client{Timeout: 25 * time.Second}
 
 // GenerateCommitMessages calls OpenAI and returns the suggested commit messages.
 func GenerateCommitMessages(ctx context.Context, data Context, cfg Config) ([]string, error) {
-	if cfg.APIKey == "" {
-		return nil, errors.New("missing OpenAI API key")
+	if strings.TrimSpace(cfg.APIKey) == "" {
+		return nil, errors.New("missing api key")
 	}
-	if cfg.Model == "" {
-		cfg.Model = defaultModel
+	if strings.TrimSpace(cfg.Model) == "" {
+		return nil, errors.New("missing model identifier")
 	}
-	if cfg.BaseURL == "" {
-		cfg.BaseURL = defaultBaseURL
+	if strings.TrimSpace(cfg.BaseURL) == "" {
+		return nil, errors.New("missing base url")
 	}
-	if cfg.Temperature == 0 {
-		cfg.Temperature = 0.2
+	if strings.TrimSpace(cfg.SystemPrompt) == "" {
+		return nil, errors.New("missing system prompt")
 	}
 	if cfg.MaxOutputs <= 0 {
-		cfg.MaxOutputs = 5
+		return nil, errors.New("max outputs must be greater than zero")
 	}
-
-	prompt := buildPrompt(data, cfg.MaxOutputs)
-	promptSystem := cfg.SystemPrompt
-	if strings.TrimSpace(promptSystem) == "" {
-		promptSystem = defaultSystemPrompt
+	prompt := cfg.UserPrompt
+	if strings.TrimSpace(prompt) == "" {
+		prompt = buildPrompt(data, cfg.MaxOutputs)
 	}
-
 	reqPayload := openAIRequest{
 		Model:       cfg.Model,
 		Temperature: cfg.Temperature,
 		Messages: []openAIMessage{
-			{Role: "system", Content: promptSystem},
+			{Role: "system", Content: cfg.SystemPrompt},
 			{Role: "user", Content: prompt},
 		},
 	}
@@ -87,7 +81,8 @@ func GenerateCommitMessages(ctx context.Context, data Context, cfg Config) ([]st
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("openai: unexpected status %s", resp.Status)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("openai: %s: %s", resp.Status, strings.TrimSpace(string(bodyBytes)))
 	}
 
 	var parsed openAIResponse
@@ -105,8 +100,6 @@ func GenerateCommitMessages(ctx context.Context, data Context, cfg Config) ([]st
 	}
 	return suggestions, nil
 }
-
-const defaultSystemPrompt = "You are an assistant that writes concise, conventional git commit messages."
 
 func buildPrompt(data Context, max int) string {
 	var b strings.Builder
