@@ -45,7 +45,7 @@ func generateCandidates(c gitContext) []string {
 		Timestamp:  time.Now(),
 	}
 
-	cfg := openAIConfig(tplData)
+	cfg := newLLMConfig(tplData)
 	if err := requireLLMConfig(cfg); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return nil
@@ -79,38 +79,34 @@ type systemPromptData struct {
 	templateData
 	Model       string
 	Provider    string
-	MaxOutputs  int
+	Quantity    int
 	Temperature float64
 }
 
 type userPromptData struct {
 	templateData
-	MaxOutputs int
+	Quantity int
 }
 
-func openAIConfig(data templateData) llm.Config {
-	apiKey := strings.TrimSpace(viper.GetString("api_key"))
-	if apiKey == "" {
-		apiKey = strings.TrimSpace(os.Getenv("OPENAI_API_KEY"))
-	}
+func newLLMConfig(data templateData) llm.Config {
 	cfg := llm.Config{
-		APIKey:      apiKey,
+		APIKey:      strings.TrimSpace(viper.GetString("api_key")),
 		Model:       strings.TrimSpace(viper.GetString("model")),
 		BaseURL:     strings.TrimSpace(viper.GetString("base_url")),
 		Temperature: viper.GetFloat64("temperature"),
-		MaxOutputs:  5,
+		Quantity:    viper.GetInt("quantity"),
 	}
 
 	sysData := systemPromptData{
 		templateData: data,
 		Model:        cfg.Model,
 		Provider:     "openai",
-		MaxOutputs:   cfg.MaxOutputs,
+		Quantity:     cfg.Quantity,
 		Temperature:  cfg.Temperature,
 	}
 	userData := userPromptData{
 		templateData: data,
-		MaxOutputs:   cfg.MaxOutputs,
+		Quantity:     cfg.Quantity,
 	}
 
 	cfg.SystemPrompt = renderTemplate(viper.GetString("system_prompt"), sysData)

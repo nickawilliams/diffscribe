@@ -51,14 +51,17 @@ func init() {
 	rootCmd.PersistentFlags().String("system-prompt", defaultSystemPrompt, "LLM system prompt override")
 	rootCmd.PersistentFlags().String("user-prompt", defaultUserPrompt, "LLM user prompt override")
 	rootCmd.PersistentFlags().Float64("temperature", 1, "LLM sampling temperature")
+	rootCmd.PersistentFlags().Int("quantity", 5, "number of suggestions to request from the LLM")
 
 	_ = viper.BindPFlag("api_key", rootCmd.PersistentFlags().Lookup("api-key"))
 	_ = viper.BindPFlag("model", rootCmd.PersistentFlags().Lookup("model"))
 	_ = viper.BindPFlag("base_url", rootCmd.PersistentFlags().Lookup("base-url"))
 	_ = viper.BindPFlag("system_prompt", rootCmd.PersistentFlags().Lookup("system-prompt"))
 	_ = viper.BindPFlag("temperature", rootCmd.PersistentFlags().Lookup("temperature"))
+	_ = viper.BindPFlag("quantity", rootCmd.PersistentFlags().Lookup("quantity"))
 
 	viper.SetDefault("temperature", 1)
+	viper.SetDefault("quantity", 5)
 
 	rootCmd.AddCommand(genCmd)
 	rootCmd.AddCommand(completeCmd)
