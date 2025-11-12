@@ -67,13 +67,8 @@ func init() {
 func initConfig() {
 	viper.SetEnvPrefix("diffscribe")
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	viper.BindEnv("api_key", "DIFFSCRIBE_API_KEY", "OPENAI_API_KEY")
 	viper.AutomaticEnv()
-
-	if viper.GetString("api_key") == "" {
-		if val := strings.TrimSpace(os.Getenv("OPENAI_API_KEY")); val != "" {
-			viper.Set("api_key", val)
-		}
-	}
 
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
