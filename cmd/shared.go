@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/rogwilco/diffscribe/internal/llm"
@@ -33,36 +35,112 @@ func generateCandidates(c gitContext) []string {
 		return nil
 	}
 
-	cfg := openAIConfig()
-	if strings.TrimSpace(cfg.APIKey) != "" {
-		msgs, err := llm.GenerateCommitMessages(context.Background(), llm.Context{
-			Branch: c.Branch,
-			Paths:  c.Paths,
-			Diff:   c.Diff,
-		}, cfg)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "diffscribe: LLM error:", err)
-		} else if len(msgs) > 0 {
-			return msgs
-		}
+	tplData := templateData{
+		Branch:     c.Branch,
+		Paths:      c.Paths,
+		Diff:       c.Diff,
+		FileCount:  len(c.Paths),
+		Summary:    joinLimit(c.Paths, 3),
+		DiffLength: len(c.Diff),
+		Timestamp:  time.Now(),
+	}
+
+	cfg := openAIConfig(tplData)
+	if err := requireLLMConfig(cfg); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return nil
+	}
+
+	msgs, err := llm.GenerateCommitMessages(context.Background(), llm.Context{
+		Branch: c.Branch,
+		Paths:  c.Paths,
+		Diff:   c.Diff,
+	}, cfg)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "diffscribe: LLM error:", err)
+	} else if len(msgs) > 0 {
+		return msgs
 	}
 
 	return stubCandidates(c)
 }
 
-func openAIConfig() llm.Config {
+type templateData struct {
+	Branch     string
+	Paths      []string
+	Diff       string
+	FileCount  int
+	Summary    string
+	DiffLength int
+	Timestamp  time.Time
+}
+
+type systemPromptData struct {
+	templateData
+	Model       string
+	Provider    string
+	MaxOutputs  int
+	Temperature float64
+}
+
+type userPromptData struct {
+	templateData
+	MaxOutputs int
+}
+
+func openAIConfig(data templateData) llm.Config {
 	apiKey := strings.TrimSpace(viper.GetString("api_key"))
 	if apiKey == "" {
 		apiKey = strings.TrimSpace(os.Getenv("OPENAI_API_KEY"))
 	}
-	return llm.Config{
-		APIKey:       apiKey,
-		Model:        strings.TrimSpace(viper.GetString("model")),
-		BaseURL:      strings.TrimSpace(viper.GetString("base_url")),
-		SystemPrompt: strings.TrimSpace(viper.GetString("system_prompt")),
-		Temperature:  viper.GetFloat64("temperature"),
-		MaxOutputs:   5,
+	cfg := llm.Config{
+		APIKey:      apiKey,
+		Model:       strings.TrimSpace(viper.GetString("model")),
+		BaseURL:     strings.TrimSpace(viper.GetString("base_url")),
+		Temperature: viper.GetFloat64("temperature"),
+		MaxOutputs:  5,
 	}
+
+	sysData := systemPromptData{
+		templateData: data,
+		Model:        cfg.Model,
+		Provider:     "openai",
+		MaxOutputs:   cfg.MaxOutputs,
+		Temperature:  cfg.Temperature,
+	}
+	userData := userPromptData{
+		templateData: data,
+		MaxOutputs:   cfg.MaxOutputs,
+	}
+
+	cfg.SystemPrompt = renderTemplate(viper.GetString("system_prompt"), sysData)
+	cfg.UserPrompt = renderTemplate(viper.GetString("user_prompt"), userData)
+	return cfg
+}
+
+func renderTemplate(raw string, data any) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ""
+	}
+	tmpl, err := template.New("prompt").Parse(raw)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "diffscribe: bad system prompt template: %v\n", err)
+		return raw
+	}
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		fmt.Fprintf(os.Stderr, "diffscribe: system prompt render error: %v\n", err)
+		return raw
+	}
+	return buf.String()
+}
+
+func requireLLMConfig(cfg llm.Config) error {
+	if strings.TrimSpace(cfg.APIKey) == "" {
+		return errors.New("diffscribe: api_key is required (set --api-key or DIFFSCRIBE_API_KEY/OPENAI_API_KEY)")
+	}
+	return nil
 }
 
 func stubCandidates(c gitContext) []string {
