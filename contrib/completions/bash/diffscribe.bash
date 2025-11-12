@@ -8,7 +8,7 @@ fi
 
 # Helper to call diffscribe for completion candidates
 _diffscribe_candidates() {
-  diffscribe complete --prefix "$1" 2>/dev/null
+  diffscribe "$1" 2>/dev/null
 }
 
 _git_commit() {

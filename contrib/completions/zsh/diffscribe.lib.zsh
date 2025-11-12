@@ -49,7 +49,7 @@ _diffscribe_complete_commit_message() {
   fi
 
   local raw
-  raw=$(command diffscribe complete --prefix "$clean" 2>/dev/null)
+  raw=$(command diffscribe "$clean" 2>/dev/null)
   local rc=$?
   _diffscribe_log "diffscribe rc=$rc"
   [[ -n $raw ]] || return 1

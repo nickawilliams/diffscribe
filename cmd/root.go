@@ -31,10 +31,26 @@ Truncated diff:
 Generate {{ .MaxOutputs }} commit message candidates using the formatting rules from the system instructions. Return only a JSON array of strings.`
 
 var rootCmd = &cobra.Command{
-	Use:           "diffscribe",
+	Use:           "diffscribe [prefix]",
 	Short:         "LLM-assisted git commit helper",
 	SilenceUsage:  true,
 	SilenceErrors: true,
+	Args:          cobra.MaximumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx, err := collectContext()
+		if err != nil {
+			return err
+		}
+		prefix := ""
+		if len(args) > 0 {
+			prefix = args[0]
+		}
+		candidates := generateCandidates(ctx, prefix)
+		for _, c := range candidates {
+			fmt.Println(c)
+		}
+		return nil
+	},
 }
 
 func Execute() error {
@@ -62,9 +78,6 @@ func init() {
 
 	viper.SetDefault("temperature", 1)
 	viper.SetDefault("quantity", 5)
-
-	rootCmd.AddCommand(genCmd)
-	rootCmd.AddCommand(completeCmd)
 }
 
 func initConfig() {

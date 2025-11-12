@@ -4,12 +4,12 @@
 [[ -z ${ZSH_VERSION-} ]] && return 0
 
 _diffscribe_git_dir=${${(%):-%N}:h}
-_diffscribe_git_lib="${_diffscribe_git_dir}/diffscribe-lib.zsh"
+_diffscribe_git_lib="${_diffscribe_git_dir}/diffscribe.lib.zsh"
 if [[ ! -r $_diffscribe_git_lib ]]; then
-	_diffscribe_git_lib="${_diffscribe_git_dir}/../diffscribe-lib.zsh"
+	_diffscribe_git_lib="${_diffscribe_git_dir}/../diffscribe.lib.zsh"
 fi
 if [[ ! -r $_diffscribe_git_lib ]]; then
-	print -ru2 -- "diffscribe: missing diffscribe-lib.zsh"
+	print -ru2 -- "diffscribe: missing diffscribe.lib.zsh"
 	return 0
 fi
 

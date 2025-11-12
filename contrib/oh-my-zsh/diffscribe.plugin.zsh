@@ -5,11 +5,11 @@
 
 typeset _diffscribe_plugin_dir=${${(%):-%N}:h}
 typeset -a _diffscribe_plugin_lib_candidates=(
-  "${_diffscribe_plugin_dir}/diffscribe-lib.zsh"
-  "${_diffscribe_plugin_dir}/../diffscribe-lib.zsh"
-  "${_diffscribe_plugin_dir}/../completions/zsh/diffscribe-lib.zsh"
-  "${_diffscribe_plugin_dir}/../../completions/zsh/diffscribe-lib.zsh"
-  "${_diffscribe_plugin_dir}/../../diffscribe-lib.zsh"
+  "${_diffscribe_plugin_dir}/diffscribe.lib.zsh"
+  "${_diffscribe_plugin_dir}/../diffscribe.lib.zsh"
+  "${_diffscribe_plugin_dir}/../completions/zsh/diffscribe.lib.zsh"
+  "${_diffscribe_plugin_dir}/../../completions/zsh/diffscribe.lib.zsh"
+  "${_diffscribe_plugin_dir}/../../diffscribe.lib.zsh"
 )
 
 for _diffscribe_plugin_lib in ${_diffscribe_plugin_lib_candidates[@]}; do

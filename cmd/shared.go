@@ -30,7 +30,7 @@ func collectContext() (gitContext, error) {
 	}, nil
 }
 
-func generateCandidates(c gitContext) []string {
+func generateCandidates(c gitContext, prefix string) []string {
 	if len(c.Paths) == 0 {
 		return nil
 	}

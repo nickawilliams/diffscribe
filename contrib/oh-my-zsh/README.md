@@ -10,7 +10,7 @@ This plugin wraps the existing `git` completion shipped by Oh-My-Zsh (gitfast or
    ```sh
    mkdir -p ~/.oh-my-zsh/custom/plugins/diffscribe
    cp contrib/oh-my-zsh/diffscribe.plugin.zsh ~/.oh-my-zsh/custom/plugins/diffscribe/
-   cp contrib/completions/zsh/diffscribe-lib.zsh ~/.oh-my-zsh/custom/plugins/diffscribe/
+   cp contrib/completions/zsh/diffscribe.lib.zsh ~/.oh-my-zsh/custom/plugins/diffscribe/
    ```
 
 2. Add `diffscribe` to the `plugins=(...)` list in `~/.zshrc`, ideally after other git-related plugins
