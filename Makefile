@@ -1,29 +1,30 @@
 # --- Variables -------------------------------------------------------------
 
-BINARY        := diffscribe
-SRC           := $(shell find . -name '*.go')
+BINARY := diffscribe
+SRC := $(shell find . -name '*.go')
 
-BUILD_DIR     := build
+BUILD_DIR := build
+OUT_DIR := .out
 
-PREFIX        ?= /usr/local/bin
-INSTALL_BIN   := $(PREFIX)/$(BINARY)
+PREFIX ?= /usr/local/bin
+INSTALL_BIN := $(PREFIX)/$(BINARY)
 
-ZSH_DIR       := $(HOME)/.zsh
-BASH_DIR      := $(HOME)/.bash_completion.d
+ZSH_DIR := $(HOME)/.zsh
+BASH_DIR := $(HOME)/.bash_completion.d
 ZSH_SCRIPT_NAME := diffscribe.zsh
-ZSH_LIB_NAME    := diffscribe.lib.zsh
+ZSH_LIB_NAME := diffscribe.lib.zsh
 BASH_SCRIPT_NAME := diffscribe.bash
 ZSH_SCRIPT_SRC := contrib/completions/zsh/$(ZSH_SCRIPT_NAME)
-ZSH_LIB_SRC    := contrib/completions/zsh/$(ZSH_LIB_NAME)
+ZSH_LIB_SRC := contrib/completions/zsh/$(ZSH_LIB_NAME)
 BASH_SCRIPT_SRC := contrib/completions/bash/$(BASH_SCRIPT_NAME)
-INSTALL_ZSH   := $(ZSH_DIR)/$(ZSH_SCRIPT_NAME)
-INSTALL_ZSH_LIB   := $(ZSH_DIR)/$(ZSH_LIB_NAME)
-INSTALL_BASH  := $(BASH_DIR)/$(BASH_SCRIPT_NAME)
+INSTALL_ZSH := $(ZSH_DIR)/$(ZSH_SCRIPT_NAME)
+INSTALL_ZSH_LIB := $(ZSH_DIR)/$(ZSH_LIB_NAME)
+INSTALL_BASH := $(BASH_DIR)/$(BASH_SCRIPT_NAME)
 INSTALL_BIN_DIR := $(dir $(INSTALL_BIN))
 INSTALL_ZSH_DIR := $(dir $(INSTALL_ZSH))
 INSTALL_ZSH_LIB_DIR := $(dir $(INSTALL_ZSH_LIB))
 INSTALL_BASH_DIR := $(dir $(INSTALL_BASH))
-OMZ_CUSTOM    ?= $(HOME)/.oh-my-zsh/custom
+OMZ_CUSTOM ?= $(HOME)/.oh-my-zsh/custom
 OMZ_PLUGIN_DIR := $(OMZ_CUSTOM)/plugins/diffscribe
 OMZ_PLUGIN_SRC := contrib/oh-my-zsh/diffscribe.plugin.zsh
 OMZ_PLUGIN_DEST := $(OMZ_PLUGIN_DIR)/diffscribe.plugin.zsh
@@ -32,12 +33,11 @@ OMZ_PLUGIN_LIB := $(OMZ_PLUGIN_DIR)/$(ZSH_LIB_NAME)
 # Main Targets
 # ============================================================================
 
-
 .PHONY: default clean build install install/all install/binary \
 	install/completions/all install/completions/zsh install/completions/zsh/lib \
 	install/completions/bash install/completions/oh-my-zsh \
 	link uninstall uninstall/all uninstall/binary uninstall/completions/zsh \
-	uninstall/completions/bash uninstall/completions/oh-my-zsh help vars _print-var
+	uninstall/completions/bash uninstall/completions/oh-my-zsh test help vars _print-var
 
 ## Build all artifacts
 all: build
@@ -52,7 +52,18 @@ build: $(SRC)
 ## Remove all build artifacts
 clean:
 	@echo "🧹 Cleaning build artifacts..."
-	@rm -rf $(BUILD_DIR) $(BINARY)
+	@rm -rf $(BUILD_DIR) $(OUT_DIR)
+
+## Run all tests with coverage
+test:
+	@echo "🧪 Running tests with coverage..."
+	@mkdir -p $(OUT_DIR)/coverage
+	@go test ./... -coverprofile=$(OUT_DIR)/coverage/coverage.out
+	@go tool cover -func=$(OUT_DIR)/coverage/coverage.out | tail -n 1
+	@go run github.com/jandelgado/gcov2lcov@v1.1.1 -infile $(OUT_DIR)/coverage/coverage.out -outfile $(OUT_DIR)/coverage/lcov.info >/dev/null
+	@go tool cover -html=$(OUT_DIR)/coverage/coverage.out -o $(OUT_DIR)/coverage/index.html
+	@echo "📄 Coverage (LCOV): $(OUT_DIR)/coverage/lcov.info"
+	@echo "🌐 Coverage (HTML): $(OUT_DIR)/coverage/index.html"
 
 ## Install just the binary
 install: install/binary
@@ -158,7 +169,6 @@ uninstall/completions/bash:
 uninstall/completions/oh-my-zsh:
 	@echo "🗑️  Removing Oh-My-Zsh plugin"
 	@rm -f $(OMZ_PLUGIN_DEST) $(OMZ_PLUGIN_LIB)
-
 
 # Utils
 # ============================================================================
