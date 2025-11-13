@@ -1,10 +1,8 @@
-# --- Variables -------------------------------------------------------------
-
 BINARY := diffscribe
 SRC := $(shell find . -name '*.go')
 
-BUILD_DIR := build
 OUT_DIR := .out
+BUILD_BIN := $(OUT_DIR)/build/$(BINARY)
 
 PREFIX ?= /usr/local/bin
 INSTALL_BIN := $(PREFIX)/$(BINARY)
@@ -33,8 +31,6 @@ OMZ_PLUGIN_LIB := $(OMZ_PLUGIN_DIR)/$(ZSH_LIB_NAME)
 # Main Targets
 # ============================================================================
 
-
-
 .PHONY: default clean build install install/all install/binary \
 	install/completions/all install/completions/zsh install/completions/zsh/lib \
 	install/completions/bash install/completions/oh-my-zsh \
@@ -47,14 +43,14 @@ all: build
 ## Build the executable
 build: $(SRC)
 	@echo "🔨 Building $(BINARY)..."
-	@mkdir -p $(BUILD_DIR)
-	@go build -o $(BUILD_DIR)/$(BINARY)
-	@echo "✅ Built $(BUILD_DIR)/$(BINARY)"
+	@mkdir -p $(dir $(BUILD_BIN))
+	@go build -o $(BUILD_BIN)
+	@echo "✅ Built $(BUILD_BIN)"
 
 ## Remove all build artifacts
 clean:
 	@echo "🧹 Cleaning build artifacts..."
-	@rm -rf $(BUILD_DIR) $(OUT_DIR)
+	@rm -rf $(OUT_DIR)
 
 ## Run all tests with coverage
 test:
@@ -85,10 +81,10 @@ install/all: install/binary install/completions/all
 install/binary: build
 	@echo "📦 Installing binary → $(INSTALL_BIN)"
 	@if [ -w $(PREFIX) ]; then \
-		install -Dm755 $(BUILD_DIR)/$(BINARY) $(INSTALL_BIN); \
+		install -Dm755 $(BUILD_BIN) $(INSTALL_BIN); \
 	else \
 		echo "🔐 Elevated permissions required — using sudo"; \
-		sudo install -Dm755 $(BUILD_DIR)/$(BINARY) $(INSTALL_BIN); \
+		sudo install -Dm755 $(BUILD_BIN) $(INSTALL_BIN); \
 	fi
 	@echo "✅ Binary installed"
 
@@ -137,7 +133,7 @@ install/completions/oh-my-zsh: install/completions/zsh/lib
 ## Symlink every artifact (binary + all completions) back to the repo
 link: build
 	@echo "🔗 Linking binary → $(INSTALL_BIN)"
-	@src="$(CURDIR)/$(BUILD_DIR)/$(BINARY)"; \
+	@src="$(CURDIR)/$(BUILD_BIN)"; \
 	if [ -w $(INSTALL_BIN_DIR) ]; then \
 		install -d $(INSTALL_BIN_DIR); \
 		ln -sfn "$$src" $(INSTALL_BIN); \
