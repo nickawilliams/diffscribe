@@ -7,21 +7,31 @@ BUILD_BIN := $(OUT_DIR)/build/$(BINARY)
 PREFIX ?= /usr/local/bin
 INSTALL_BIN := $(PREFIX)/$(BINARY)
 
+# Completion install locations
 ZSH_DIR := $(HOME)/.zsh
 BASH_DIR := $(HOME)/.bash_completion.d
+FISH_DIR := $(HOME)/.config/fish/completions
+
 ZSH_SCRIPT_NAME := diffscribe.zsh
 ZSH_LIB_NAME := diffscribe.lib.zsh
 BASH_SCRIPT_NAME := diffscribe.bash
+FISH_SCRIPT_NAME := diffscribe.fish
+
 ZSH_SCRIPT_SRC := contrib/completions/zsh/$(ZSH_SCRIPT_NAME)
 ZSH_LIB_SRC := contrib/completions/zsh/$(ZSH_LIB_NAME)
 BASH_SCRIPT_SRC := contrib/completions/bash/$(BASH_SCRIPT_NAME)
+FISH_SCRIPT_SRC := contrib/completions/fish/$(FISH_SCRIPT_NAME)
+
 INSTALL_ZSH := $(ZSH_DIR)/$(ZSH_SCRIPT_NAME)
 INSTALL_ZSH_LIB := $(ZSH_DIR)/$(ZSH_LIB_NAME)
 INSTALL_BASH := $(BASH_DIR)/$(BASH_SCRIPT_NAME)
+INSTALL_FISH := $(FISH_DIR)/$(FISH_SCRIPT_NAME)
+
 INSTALL_BIN_DIR := $(dir $(INSTALL_BIN))
 INSTALL_ZSH_DIR := $(dir $(INSTALL_ZSH))
 INSTALL_ZSH_LIB_DIR := $(dir $(INSTALL_ZSH_LIB))
 INSTALL_BASH_DIR := $(dir $(INSTALL_BASH))
+INSTALL_FISH_DIR := $(dir $(INSTALL_FISH))
 OMZ_CUSTOM ?= $(HOME)/.oh-my-zsh/custom
 OMZ_PLUGIN_DIR := $(OMZ_CUSTOM)/plugins/diffscribe
 OMZ_PLUGIN_SRC := contrib/oh-my-zsh/diffscribe.plugin.zsh
@@ -33,9 +43,9 @@ OMZ_PLUGIN_LIB := $(OMZ_PLUGIN_DIR)/$(ZSH_LIB_NAME)
 
 .PHONY: default clean build install install/all install/binary \
 	install/completions/all install/completions/zsh install/completions/zsh/lib \
-	install/completions/bash install/completions/oh-my-zsh \
+	install/completions/bash install/completions/fish install/completions/oh-my-zsh \
 	link uninstall uninstall/all uninstall/binary uninstall/completions/zsh \
-	uninstall/completions/bash uninstall/completions/oh-my-zsh test bench format help vars _print-var
+	uninstall/completions/bash uninstall/completions/fish uninstall/completions/oh-my-zsh test bench format help vars _print-var
 
 ## Build all artifacts
 all: build
@@ -88,7 +98,7 @@ install/binary: build
 	fi
 	@echo "✅ Binary installed"
 
-install/completions/all: install/completions/zsh install/completions/bash install/completions/oh-my-zsh
+install/completions/all: install/completions/zsh install/completions/bash install/completions/fish install/completions/oh-my-zsh
 
 install/completions/zsh: install/completions/zsh/lib
 	@echo "📦 Installing Zsh completion assets into $(ZSH_DIR)"
@@ -118,6 +128,16 @@ install/completions/bash:
 		echo "⚠️  Missing $(BASH_SCRIPT_SRC); skipping Bash completion"; \
 	fi
 	@echo "👉 Add [[ -r $$HOME/.bash_completion.d/$(BASH_SCRIPT_NAME) ]] && . $$HOME/.bash_completion.d/$(BASH_SCRIPT_NAME) to ~/.bashrc"
+
+install/completions/fish:
+	@echo "📦 Installing Fish completion → $(INSTALL_FISH)"
+	@mkdir -p $(FISH_DIR)
+	@if [ -f $(FISH_SCRIPT_SRC) ]; then \
+		install -Dm644 $(FISH_SCRIPT_SRC) $(INSTALL_FISH); \
+	else \
+		echo "⚠️  Missing $(FISH_SCRIPT_SRC); skipping Fish completion"; \
+	fi
+	@echo "👉 Fish auto-loads $$HOME/.config/fish/completions/$(FISH_SCRIPT_NAME)"
 
 install/completions/oh-my-zsh: install/completions/zsh/lib
 	@if [ -f $(OMZ_PLUGIN_SRC) ]; then \
@@ -151,6 +171,9 @@ link: build
 	@echo "🔗 Linking Bash completion → $(INSTALL_BASH)"
 	@install -d $(INSTALL_BASH_DIR)
 	@ln -sfn "$(CURDIR)/$(BASH_SCRIPT_SRC)" $(INSTALL_BASH)
+	@echo "🔗 Linking Fish completion → $(INSTALL_FISH)"
+	@install -d $(INSTALL_FISH_DIR)
+	@ln -sfn "$(CURDIR)/$(FISH_SCRIPT_SRC)" $(INSTALL_FISH)
 	@echo "🔗 Linking Oh-My-Zsh plugin → $(OMZ_PLUGIN_DEST)"
 	@install -d $(OMZ_PLUGIN_DIR)
 	@ln -sfn "$(CURDIR)/$(OMZ_PLUGIN_SRC)" $(OMZ_PLUGIN_DEST)
@@ -160,7 +183,7 @@ link: build
 ## Remove the installed binary
 uninstall: uninstall/binary
 
-uninstall/all: uninstall/binary uninstall/completions/zsh uninstall/completions/bash uninstall/completions/oh-my-zsh
+uninstall/all: uninstall/binary uninstall/completions/zsh uninstall/completions/bash uninstall/completions/fish uninstall/completions/oh-my-zsh
 
 uninstall/binary:
 	@echo "🗑️  Removing binary $(INSTALL_BIN)"
@@ -173,6 +196,10 @@ uninstall/completions/zsh:
 uninstall/completions/bash:
 	@echo "🗑️  Removing Bash completion"
 	@rm -f $(INSTALL_BASH)
+
+uninstall/completions/fish:
+	@echo "🗑️  Removing Fish completion"
+	@rm -f $(INSTALL_FISH)
 
 uninstall/completions/oh-my-zsh:
 	@echo "🗑️  Removing Oh-My-Zsh plugin"
