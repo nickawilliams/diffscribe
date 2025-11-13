@@ -91,6 +91,7 @@ type userPromptData struct {
 func newLLMConfig(data templateData) llm.Config {
 	cfg := llm.Config{
 		APIKey:      strings.TrimSpace(viper.GetString("api_key")),
+		Provider:    strings.TrimSpace(viper.GetString("provider")),
 		Model:       strings.TrimSpace(viper.GetString("model")),
 		BaseURL:     strings.TrimSpace(viper.GetString("base_url")),
 		Temperature: viper.GetFloat64("temperature"),

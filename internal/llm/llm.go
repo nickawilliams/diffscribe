@@ -1,12 +1,10 @@
 package llm
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -22,6 +20,7 @@ type Context struct {
 // Config controls how we call the OpenAI API.
 type Config struct {
 	APIKey       string
+	Provider     string
 	Model        string
 	BaseURL      string
 	Temperature  float64
@@ -39,30 +38,24 @@ func GenerateCommitMessages(ctx context.Context, data Context, cfg Config) ([]st
 	if err := validateConfig(cfg); err != nil {
 		return nil, err
 	}
+	provider, err := newProvider(cfg)
+	if err != nil {
+		return nil, err
+	}
 	prompt := cfg.UserPrompt
 	if strings.TrimSpace(prompt) == "" {
 		prompt = buildPrompt(data, cfg.Quantity)
 	}
-	reqPayload := openAIRequest{
-		Model:       cfg.Model,
-		Temperature: cfg.Temperature,
-		Messages: []openAIMessage{
-			{Role: "system", Content: cfg.SystemPrompt},
-			{Role: "user", Content: prompt},
-		},
+
+	messages := []Message{
+		{Role: "system", Content: cfg.SystemPrompt},
+		{Role: "user", Content: prompt},
 	}
 
-	body, err := json.Marshal(reqPayload)
+	req, err := provider.BuildRequest(ctx, cfg, messages)
 	if err != nil {
 		return nil, err
 	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, cfg.BaseURL, bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", "Bearer "+cfg.APIKey)
-	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -70,25 +63,7 @@ func GenerateCommitMessages(ctx context.Context, data Context, cfg Config) ([]st
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 300 {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("openai: %s: %s", resp.Status, strings.TrimSpace(string(bodyBytes)))
-	}
-
-	var parsed openAIResponse
-	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return nil, err
-	}
-	if len(parsed.Choices) == 0 {
-		return nil, errors.New("openai: empty response")
-	}
-
-	content := strings.TrimSpace(parsed.Choices[0].Message.Content)
-	suggestions, err := parseSuggestions(content)
-	if err != nil {
-		return nil, err
-	}
-	return suggestions, nil
+	return provider.ParseResponse(resp)
 }
 
 func buildPrompt(data Context, max int) string {
@@ -118,6 +93,9 @@ func validateConfig(cfg Config) error {
 	if strings.TrimSpace(cfg.APIKey) == "" {
 		return fmt.Errorf("%w: api key is required", ErrInvalidConfig)
 	}
+	if strings.TrimSpace(cfg.Provider) == "" {
+		return fmt.Errorf("%w: provider is required", ErrInvalidConfig)
+	}
 	if strings.TrimSpace(cfg.Model) == "" {
 		return fmt.Errorf("%w: model identifier is required", ErrInvalidConfig)
 	}
@@ -131,25 +109,6 @@ func validateConfig(cfg Config) error {
 		return fmt.Errorf("%w: quantity must be greater than zero", ErrInvalidConfig)
 	}
 	return nil
-}
-
-type openAIRequest struct {
-	Model       string          `json:"model"`
-	Messages    []openAIMessage `json:"messages"`
-	Temperature float64         `json:"temperature"`
-}
-
-type openAIMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-type openAIResponse struct {
-	Choices []struct {
-		Message struct {
-			Content string `json:"content"`
-		} `json:"message"`
-	} `json:"choices"`
 }
 
 func parseSuggestions(content string) ([]string, error) {

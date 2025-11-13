@@ -14,6 +14,7 @@ import (
 func TestValidateConfig(t *testing.T) {
 	good := Config{
 		APIKey:       "k",
+		Provider:     "openai",
 		Model:        "m",
 		BaseURL:      "http://example.com",
 		Temperature:  0.5,
@@ -30,11 +31,12 @@ func TestValidateConfig(t *testing.T) {
 		cfg  Config
 		want string
 	}{
-		{"missing api key", Config{Model: "m", BaseURL: "x", Quantity: 1, SystemPrompt: "s"}, "api key"},
-		{"missing model", Config{APIKey: "k", BaseURL: "x", Quantity: 1, SystemPrompt: "s"}, "model"},
-		{"missing base", Config{APIKey: "k", Model: "m", Quantity: 1, SystemPrompt: "s"}, "base URL"},
-		{"missing system prompt", Config{APIKey: "k", Model: "m", BaseURL: "x", Quantity: 1}, "system prompt"},
-		{"quantity <= 0", Config{APIKey: "k", Model: "m", BaseURL: "x", Quantity: 0, SystemPrompt: "s"}, "quantity"},
+		{"missing api key", Config{Provider: "openai", Model: "m", BaseURL: "x", Quantity: 1, SystemPrompt: "s"}, "api key"},
+		{"missing provider", Config{APIKey: "k", Model: "m", BaseURL: "x", Quantity: 1, SystemPrompt: "s"}, "provider"},
+		{"missing model", Config{APIKey: "k", Provider: "openai", BaseURL: "x", Quantity: 1, SystemPrompt: "s"}, "model"},
+		{"missing base", Config{APIKey: "k", Provider: "openai", Model: "m", Quantity: 1, SystemPrompt: "s"}, "base URL"},
+		{"missing system prompt", Config{APIKey: "k", Provider: "openai", Model: "m", BaseURL: "x", Quantity: 1}, "system prompt"},
+		{"quantity <= 0", Config{APIKey: "k", Provider: "openai", Model: "m", BaseURL: "x", Quantity: 0, SystemPrompt: "s"}, "quantity"},
 	}
 
 	for _, tc := range cases {
@@ -100,6 +102,7 @@ func TestGenerateCommitMessages_Success(t *testing.T) {
 
 	cfg := Config{
 		APIKey:       "k",
+		Provider:     "openai",
 		Model:        "m",
 		BaseURL:      srv.URL,
 		Temperature:  1,
@@ -147,6 +150,7 @@ func TestGenerateCommitMessages_UserPromptUsed(t *testing.T) {
 
 	cfg := Config{
 		APIKey:       "k",
+		Provider:     "openai",
 		Model:        "m",
 		BaseURL:      srv.URL,
 		Temperature:  1,
@@ -173,7 +177,7 @@ func TestGenerateCommitMessages_EmptyChoices(t *testing.T) {
 	httpClient = srv.Client()
 	defer func() { httpClient = oldClient }()
 
-	cfg := Config{APIKey: "k", Model: "m", BaseURL: srv.URL, Temperature: 1, Quantity: 1, SystemPrompt: "s"}
+	cfg := Config{APIKey: "k", Provider: "openai", Model: "m", BaseURL: srv.URL, Temperature: 1, Quantity: 1, SystemPrompt: "s"}
 	if _, err := GenerateCommitMessages(context.Background(), Context{}, cfg); err == nil {
 		t.Fatalf("expected error for empty choices")
 	}
@@ -189,7 +193,7 @@ func TestGenerateCommitMessages_ParseError(t *testing.T) {
 	httpClient = srv.Client()
 	defer func() { httpClient = oldClient }()
 
-	cfg := Config{APIKey: "k", Model: "m", BaseURL: srv.URL, Temperature: 1, Quantity: 1, SystemPrompt: "s"}
+	cfg := Config{APIKey: "k", Provider: "openai", Model: "m", BaseURL: srv.URL, Temperature: 1, Quantity: 1, SystemPrompt: "s"}
 	if _, err := GenerateCommitMessages(context.Background(), Context{}, cfg); err == nil {
 		t.Fatalf("expected parse error")
 	}
@@ -205,7 +209,7 @@ func TestGenerateCommitMessages_JSONDecodeError(t *testing.T) {
 	httpClient = srv.Client()
 	defer func() { httpClient = oldClient }()
 
-	cfg := Config{APIKey: "k", Model: "m", BaseURL: srv.URL, Temperature: 1, Quantity: 1, SystemPrompt: "s"}
+	cfg := Config{APIKey: "k", Provider: "openai", Model: "m", BaseURL: srv.URL, Temperature: 1, Quantity: 1, SystemPrompt: "s"}
 	if _, err := GenerateCommitMessages(context.Background(), Context{}, cfg); err == nil {
 		t.Fatalf("expected decode error")
 	}
@@ -218,21 +222,21 @@ func TestGenerateCommitMessages_RequestError(t *testing.T) {
 	})}
 	defer func() { httpClient = oldClient }()
 
-	cfg := Config{APIKey: "k", Model: "m", BaseURL: "http://example.com", Temperature: 1, Quantity: 1, SystemPrompt: "s"}
+	cfg := Config{APIKey: "k", Provider: "openai", Model: "m", BaseURL: "http://example.com", Temperature: 1, Quantity: 1, SystemPrompt: "s"}
 	if _, err := GenerateCommitMessages(context.Background(), Context{}, cfg); err == nil {
 		t.Fatalf("expected request error")
 	}
 }
 
 func TestGenerateCommitMessages_MarshalError(t *testing.T) {
-	cfg := Config{APIKey: "k", Model: "m", BaseURL: "http://example.com", Temperature: math.NaN(), Quantity: 1, SystemPrompt: "s"}
+	cfg := Config{APIKey: "k", Provider: "openai", Model: "m", BaseURL: "http://example.com", Temperature: math.NaN(), Quantity: 1, SystemPrompt: "s"}
 	if _, err := GenerateCommitMessages(context.Background(), Context{}, cfg); err == nil {
 		t.Fatalf("expected marshal error due to NaN")
 	}
 }
 
 func TestGenerateCommitMessages_RequestBuildError(t *testing.T) {
-	cfg := Config{APIKey: "k", Model: "m", BaseURL: ":://bad", Temperature: 1, Quantity: 1, SystemPrompt: "s"}
+	cfg := Config{APIKey: "k", Provider: "openai", Model: "m", BaseURL: ":://bad", Temperature: 1, Quantity: 1, SystemPrompt: "s"}
 	if _, err := GenerateCommitMessages(context.Background(), Context{}, cfg); err == nil {
 		t.Fatalf("expected request build error")
 	}
@@ -259,7 +263,7 @@ func BenchmarkGenerateCommitMessages(b *testing.B) {
 	httpClient = srv.Client()
 	defer func() { httpClient = oldClient }()
 
-	cfg := Config{APIKey: "k", Model: "m", BaseURL: srv.URL, Temperature: 1, Quantity: 1, SystemPrompt: "s"}
+	cfg := Config{APIKey: "k", Provider: "openai", Model: "m", BaseURL: srv.URL, Temperature: 1, Quantity: 1, SystemPrompt: "s"}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

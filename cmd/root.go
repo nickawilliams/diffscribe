@@ -31,6 +31,7 @@ Truncated diff:
 Generate {{ .MaxOutputs }} commit message candidates using the formatting rules from the system instructions. Return only a JSON array of strings.`
 
 const (
+	defaultProvider    = "openai"
 	defaultModel       = "gpt-5-nano"
 	defaultBaseURL     = "https://api.openai.com/v1/chat/completions"
 	defaultTemperature = 1
@@ -69,6 +70,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default searches diffscribe.{yaml,json,toml})")
 	rootCmd.PersistentFlags().String("api-key", "", "LLM provider API key")
+	rootCmd.PersistentFlags().String("provider", defaultProvider, "LLM provider (openai, openrouter, etc.)")
 	rootCmd.PersistentFlags().String("model", defaultModel, "LLM model identifier")
 	rootCmd.PersistentFlags().String("base-url", defaultBaseURL, "LLM API base URL")
 	rootCmd.PersistentFlags().String("system-prompt", defaultSystemPrompt, "LLM system prompt override")
@@ -77,12 +79,14 @@ func init() {
 	rootCmd.PersistentFlags().Int("quantity", defaultQuantity, "number of suggestions to request from the LLM")
 
 	_ = viper.BindPFlag("api_key", rootCmd.PersistentFlags().Lookup("api-key"))
+	_ = viper.BindPFlag("provider", rootCmd.PersistentFlags().Lookup("provider"))
 	_ = viper.BindPFlag("model", rootCmd.PersistentFlags().Lookup("model"))
 	_ = viper.BindPFlag("base_url", rootCmd.PersistentFlags().Lookup("base-url"))
 	_ = viper.BindPFlag("system_prompt", rootCmd.PersistentFlags().Lookup("system-prompt"))
 	_ = viper.BindPFlag("temperature", rootCmd.PersistentFlags().Lookup("temperature"))
 	_ = viper.BindPFlag("quantity", rootCmd.PersistentFlags().Lookup("quantity"))
 
+	viper.SetDefault("provider", defaultProvider)
 	viper.SetDefault("model", defaultModel)
 	viper.SetDefault("base_url", defaultBaseURL)
 	viper.SetDefault("temperature", defaultTemperature)
