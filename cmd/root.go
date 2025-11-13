@@ -31,11 +31,12 @@ Truncated diff:
 Generate {{ .MaxOutputs }} commit message candidates using the formatting rules from the system instructions. Return only a JSON array of strings.`
 
 const (
-	defaultProvider    = "openai"
-	defaultModel       = "gpt-5-nano"
-	defaultBaseURL     = "https://api.openai.com/v1/chat/completions"
-	defaultTemperature = 1
-	defaultQuantity    = 5
+	defaultProvider            = "openai"
+	defaultModel               = "gpt-4o-mini"
+	defaultBaseURL             = "https://api.openai.com/v1/chat/completions"
+	defaultTemperature         = 1
+	defaultQuantity            = 5
+	defaultMaxCompletionTokens = 512
 )
 
 var rootCmd = &cobra.Command{
@@ -77,6 +78,7 @@ func init() {
 	rootCmd.PersistentFlags().String("user-prompt", defaultUserPrompt, "LLM user prompt override")
 	rootCmd.PersistentFlags().Float64("temperature", defaultTemperature, "LLM sampling temperature")
 	rootCmd.PersistentFlags().Int("quantity", defaultQuantity, "number of suggestions to request from the LLM")
+	rootCmd.PersistentFlags().Int("max-completion-tokens", defaultMaxCompletionTokens, "max completion tokens to request from the LLM (0 = provider default)")
 
 	_ = viper.BindPFlag("api_key", rootCmd.PersistentFlags().Lookup("api-key"))
 	_ = viper.BindPFlag("provider", rootCmd.PersistentFlags().Lookup("provider"))
@@ -85,12 +87,14 @@ func init() {
 	_ = viper.BindPFlag("system_prompt", rootCmd.PersistentFlags().Lookup("system-prompt"))
 	_ = viper.BindPFlag("temperature", rootCmd.PersistentFlags().Lookup("temperature"))
 	_ = viper.BindPFlag("quantity", rootCmd.PersistentFlags().Lookup("quantity"))
+	_ = viper.BindPFlag("max_completion_tokens", rootCmd.PersistentFlags().Lookup("max-completion-tokens"))
 
 	viper.SetDefault("provider", defaultProvider)
 	viper.SetDefault("model", defaultModel)
 	viper.SetDefault("base_url", defaultBaseURL)
 	viper.SetDefault("temperature", defaultTemperature)
 	viper.SetDefault("quantity", defaultQuantity)
+	viper.SetDefault("max_completion_tokens", defaultMaxCompletionTokens)
 }
 
 func initConfig() {

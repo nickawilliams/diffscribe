@@ -19,14 +19,15 @@ type Context struct {
 
 // Config controls how we call the OpenAI API.
 type Config struct {
-	APIKey       string
-	Provider     string
-	Model        string
-	BaseURL      string
-	Temperature  float64
-	Quantity     int
-	SystemPrompt string
-	UserPrompt   string
+	APIKey              string
+	Provider            string
+	Model               string
+	BaseURL             string
+	Temperature         float64
+	Quantity            int
+	MaxCompletionTokens int
+	SystemPrompt        string
+	UserPrompt          string
 }
 
 var httpClient = &http.Client{Timeout: 25 * time.Second}
@@ -108,10 +109,25 @@ func validateConfig(cfg Config) error {
 	if cfg.Quantity <= 0 {
 		return fmt.Errorf("%w: quantity must be greater than zero", ErrInvalidConfig)
 	}
+	if cfg.MaxCompletionTokens < 0 {
+		return fmt.Errorf("%w: max completion tokens cannot be negative", ErrInvalidConfig)
+	}
 	return nil
 }
 
 func parseSuggestions(content string) ([]string, error) {
+	content = strings.TrimSpace(content)
+	if content == "" {
+		return nil, errors.New("openai: empty response")
+	}
+
+	var obj struct {
+		Suggestions []string `json:"suggestions"`
+	}
+	if err := json.Unmarshal([]byte(content), &obj); err == nil && len(obj.Suggestions) > 0 {
+		return normalize(obj.Suggestions), nil
+	}
+
 	var arr []string
 	if err := json.Unmarshal([]byte(content), &arr); err == nil {
 		return normalize(arr), nil

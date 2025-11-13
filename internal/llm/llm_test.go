@@ -37,6 +37,7 @@ func TestValidateConfig(t *testing.T) {
 		{"missing base", Config{APIKey: "k", Provider: "openai", Model: "m", Quantity: 1, SystemPrompt: "s"}, "base URL"},
 		{"missing system prompt", Config{APIKey: "k", Provider: "openai", Model: "m", BaseURL: "x", Quantity: 1}, "system prompt"},
 		{"quantity <= 0", Config{APIKey: "k", Provider: "openai", Model: "m", BaseURL: "x", Quantity: 0, SystemPrompt: "s"}, "quantity"},
+		{"negative max completion tokens", Config{APIKey: "k", Provider: "openai", Model: "m", BaseURL: "x", Quantity: 1, SystemPrompt: "s", MaxCompletionTokens: -5}, "max completion tokens"},
 	}
 
 	for _, tc := range cases {
