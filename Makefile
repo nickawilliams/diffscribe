@@ -33,11 +33,13 @@ OMZ_PLUGIN_LIB := $(OMZ_PLUGIN_DIR)/$(ZSH_LIB_NAME)
 # Main Targets
 # ============================================================================
 
+
+
 .PHONY: default clean build install install/all install/binary \
 	install/completions/all install/completions/zsh install/completions/zsh/lib \
 	install/completions/bash install/completions/oh-my-zsh \
 	link uninstall uninstall/all uninstall/binary uninstall/completions/zsh \
-	uninstall/completions/bash uninstall/completions/oh-my-zsh test help vars _print-var
+	uninstall/completions/bash uninstall/completions/oh-my-zsh test bench format help vars _print-var
 
 ## Build all artifacts
 all: build
@@ -64,6 +66,16 @@ test:
 	@go tool cover -html=$(OUT_DIR)/coverage/coverage.out -o $(OUT_DIR)/coverage/index.html
 	@echo "📄 Coverage (LCOV): $(OUT_DIR)/coverage/lcov.info"
 	@echo "🌐 Coverage (HTML): $(OUT_DIR)/coverage/index.html"
+
+## Run benchmarks for the LLM client
+bench:
+	@echo "🏎  Running benchmarks..."
+	@go test ./internal/llm -bench=BenchmarkGenerateCommitMessages -benchmem
+
+## Format all Go files
+format:
+	@echo "🎨 Formatting Go files..."
+	@gofmt -w $(SRC)
 
 ## Install just the binary
 install: install/binary
