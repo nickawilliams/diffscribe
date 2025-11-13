@@ -30,6 +30,13 @@ Truncated diff:
 
 Generate {{ .MaxOutputs }} commit message candidates using the formatting rules from the system instructions. Return only a JSON array of strings.`
 
+const (
+	defaultModel       = "gpt-5-nano"
+	defaultBaseURL     = "https://api.openai.com/v1/chat/completions"
+	defaultTemperature = 1
+	defaultQuantity    = 5
+)
+
 var rootCmd = &cobra.Command{
 	Use:           "diffscribe [prefix]",
 	Short:         "LLM-assisted git commit helper",
@@ -62,12 +69,12 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default searches diffscribe.{yaml,json,toml})")
 	rootCmd.PersistentFlags().String("api-key", "", "LLM provider API key")
-	rootCmd.PersistentFlags().String("model", "gpt-5-nano", "LLM model identifier")
-	rootCmd.PersistentFlags().String("base-url", "https://api.openai.com/v1/chat/completions", "LLM API base URL")
+	rootCmd.PersistentFlags().String("model", defaultModel, "LLM model identifier")
+	rootCmd.PersistentFlags().String("base-url", defaultBaseURL, "LLM API base URL")
 	rootCmd.PersistentFlags().String("system-prompt", defaultSystemPrompt, "LLM system prompt override")
 	rootCmd.PersistentFlags().String("user-prompt", defaultUserPrompt, "LLM user prompt override")
-	rootCmd.PersistentFlags().Float64("temperature", 1, "LLM sampling temperature")
-	rootCmd.PersistentFlags().Int("quantity", 5, "number of suggestions to request from the LLM")
+	rootCmd.PersistentFlags().Float64("temperature", defaultTemperature, "LLM sampling temperature")
+	rootCmd.PersistentFlags().Int("quantity", defaultQuantity, "number of suggestions to request from the LLM")
 
 	_ = viper.BindPFlag("api_key", rootCmd.PersistentFlags().Lookup("api-key"))
 	_ = viper.BindPFlag("model", rootCmd.PersistentFlags().Lookup("model"))
@@ -76,8 +83,10 @@ func init() {
 	_ = viper.BindPFlag("temperature", rootCmd.PersistentFlags().Lookup("temperature"))
 	_ = viper.BindPFlag("quantity", rootCmd.PersistentFlags().Lookup("quantity"))
 
-	viper.SetDefault("temperature", 1)
-	viper.SetDefault("quantity", 5)
+	viper.SetDefault("model", defaultModel)
+	viper.SetDefault("base_url", defaultBaseURL)
+	viper.SetDefault("temperature", defaultTemperature)
+	viper.SetDefault("quantity", defaultQuantity)
 }
 
 func initConfig() {
