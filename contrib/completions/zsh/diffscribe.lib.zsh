@@ -61,6 +61,12 @@ _diffscribe_complete_commit_message() {
   compadd -S "" -- "${cands[@]}"
   local comp_status=$?
   _diffscribe_log "compadd status=$comp_status count=${#cands}"
+
+  if (( comp_status == 0 )); then
+    compstate[list]='list'
+    compstate[insert]='menu'
+  fi
+
   return $comp_status
 }
 
