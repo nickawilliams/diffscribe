@@ -10,8 +10,12 @@ typeset -g _diffscribe_git_hook_registered=0
 typeset -g _diffscribe_status_mode=""
 typeset -g _diffscribe_status_text="[diffscribe] loading…"
 
+_diffscribe_status_enabled() {
+  [[ ${DIFFSCRIBE_STATUS:-1} != 0 ]]
+}
+
 _diffscribe_set_status() {
-  [[ -z ${DIFFSCRIBE_STATUS-} ]] && return 1
+  _diffscribe_status_enabled || return 1
   local msg=${_diffscribe_status_text}
   if zle -M "$msg" 2>/dev/null; then
     _diffscribe_status_mode="zle"
@@ -24,7 +28,7 @@ _diffscribe_set_status() {
 }
 
 _diffscribe_clear_status() {
-  [[ -z ${DIFFSCRIBE_STATUS-} ]] && return
+  _diffscribe_status_enabled || return
   if [[ $_diffscribe_status_mode == zle ]]; then
     zle -M "" 2>/dev/null
   elif [[ $_diffscribe_status_mode == stderr ]]; then
