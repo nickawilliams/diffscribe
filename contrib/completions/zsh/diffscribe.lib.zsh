@@ -8,15 +8,17 @@ typeset -ga _diffscribe_stash_args=()
 typeset -g _diffscribe_git_orig_handler=""
 typeset -g _diffscribe_git_hook_registered=0
 typeset -g _diffscribe_status_mode=""
+typeset -g _diffscribe_status_text="[diffscribe] loading…"
 
 _diffscribe_set_status() {
   [[ -z ${DIFFSCRIBE_STATUS-} ]] && return 1
-  if zle -M "[diffscribe] completing…" 2>/dev/null; then
+  local msg=${_diffscribe_status_text}
+  if zle -M "$msg" 2>/dev/null; then
     _diffscribe_status_mode="zle"
     return 0
   fi
 
-  print -rn -u2 -- $'\r[diffscribe] completing…'
+  print -rn -u2 -- $'\r'"$msg"
   _diffscribe_status_mode="stderr"
   return 0
 }
