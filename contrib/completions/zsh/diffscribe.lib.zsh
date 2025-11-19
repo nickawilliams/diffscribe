@@ -8,6 +8,11 @@ typeset -ga _diffscribe_stash_args=()
 typeset -g _diffscribe_git_orig_handler=""
 typeset -g _diffscribe_git_hook_registered=0
 
+_diffscribe_print_status() {
+  [[ -z ${DIFFSCRIBE_STATUS-} ]] && return
+  print -rn -u2 -- "$1"
+}
+
 _diffscribe_register_git_hook() {
   (( !_diffscribe_git_hook_registered )) || return 0
   autoload -Uz add-zsh-hook 2>/dev/null
@@ -226,9 +231,20 @@ _diffscribe_complete_commit_message() {
     return 1
   fi
 
-  local raw
+  local raw status_active=0
+  if [[ -n ${DIFFSCRIBE_STATUS-} ]]; then
+    _diffscribe_print_status $'\r[diffscribe] completing…'
+    status_active=1
+  fi
+
   raw=$(_diffscribe_run_diffscribe "$clean" "$mode")
   local rc=$?
+  if (( status_active )); then
+    _diffscribe_print_status $'\r\033[K'
+    if (( rc != 0 )); then
+      print -ru2 -- "[diffscribe] completion failed"
+    fi
+  fi
   _diffscribe_log "diffscribe rc=$rc"
   [[ -n $raw ]] || return 1
 
