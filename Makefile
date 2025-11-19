@@ -41,11 +41,14 @@ OMZ_PLUGIN_LIB := $(OMZ_PLUGIN_DIR)/$(ZSH_LIB_NAME)
 # Main Targets
 # ============================================================================
 
+
 .PHONY: default clean build install install/all install/binary \
 	install/completions/all install/completions/zsh install/completions/zsh/lib \
 	install/completions/bash install/completions/fish install/completions/oh-my-zsh \
 	link uninstall uninstall/all uninstall/binary uninstall/completions/zsh \
-	uninstall/completions/bash uninstall/completions/fish uninstall/completions/oh-my-zsh test bench format help vars _print-var
+	uninstall/completions/bash uninstall/completions/fish uninstall/completions/oh-my-zsh \
+	test test/completions test/completions/bash test/completions/zsh \
+	test/completions/fish bench format help vars _print-var
 
 ## Build all artifacts
 all: build
@@ -72,6 +75,21 @@ test:
 	@go tool cover -html=$(OUT_DIR)/coverage/coverage.out -o $(OUT_DIR)/coverage/index.html
 	@echo "📄 Coverage (LCOV): $(OUT_DIR)/coverage/lcov.info"
 	@echo "🌐 Coverage (HTML): $(OUT_DIR)/coverage/index.html"
+
+## Run all completion hook tests
+test/completions: test/completions/bash test/completions/zsh test/completions/fish
+
+## Run Bash completion tests
+test/completions/bash:
+	@bash contrib/completions/tests/test_bash.sh
+
+## Run Zsh completion tests
+test/completions/zsh:
+	@zsh contrib/completions/tests/test_zsh.sh
+
+## Run Fish completion tests
+test/completions/fish:
+	@fish contrib/completions/tests/test_fish.fish
 
 ## Run benchmarks for the LLM client
 bench:
