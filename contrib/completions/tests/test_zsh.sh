@@ -35,7 +35,24 @@ export PATH="$tmp_dir:$PATH"
 source "$repo_root/contrib/completions/zsh/diffscribe.lib.zsh"
 
 typeset -Ag compstate
+typeset -Ag _comps
 typeset -a TEST_COMPLETIONS=()
+typeset called_git=0
+
+compdef() {
+  local func=$1
+  shift
+  local arg cmd
+  for arg in "$@"; do
+    if [[ $arg == *=* ]]; then
+      func=${arg%%=*}
+      cmd=${arg#*=}
+      _comps[$cmd]=$func
+    else
+      _comps[$arg]=$func
+    fi
+  done
+}
 
 compadd() {
   local args=("$@")
@@ -89,3 +106,43 @@ run_completion "stash-candidate" git stash push --include-untracked -- src -m ''
 run_completion "stash-candidate" git stash save -k ''
 
 print -- "zsh completion tests passed"
+
+# Ensure the git completion wrapper intercepts commit completions and falls back
+# to the original _git implementation otherwise.
+_git() {
+  (( called_git++ ))
+  return 0
+}
+
+_comps[git]=_git
+_diffscribe_git_orig_handler=""
+_diffscribe_git_hook_registered=0
+diffscribe_wrap_git_completion
+assert_eq "_diffscribe_git_wrapper" "${_comps[git]-}" "git completion wrapper registered"
+assert_eq 1 ${_diffscribe_git_hook_registered:-0} "git completion hook registered"
+
+# Simulate another plugin re-registering git completion (e.g., git plugin loaded after us).
+_comps[git]=_git
+diffscribe_wrap_git_completion
+assert_eq "_diffscribe_git_wrapper" "${_comps[git]-}" "wrapper reapplied after override"
+
+words=(git commit -m '')
+CURRENT=${#words}
+called_git=0
+TEST_COMPLETIONS=()
+if ! _diffscribe_git_wrapper; then
+  print -u2 -- "FAIL: wrapper commit invocation failed"
+  exit 1
+fi
+assert_eq 0 $called_git "wrapper short-circuits git commit completions"
+assert_eq "commit-candidate" "${TEST_COMPLETIONS[1]-}" "wrapper commit completion"
+
+words=(git status)
+CURRENT=${#words}
+called_git=0
+TEST_COMPLETIONS=()
+if ! _diffscribe_git_wrapper; then
+  print -u2 -- "FAIL: wrapper fallback invocation failed"
+  exit 1
+fi
+assert_eq 1 $called_git "wrapper falls back to original git completion"

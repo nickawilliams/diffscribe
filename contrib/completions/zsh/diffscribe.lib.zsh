@@ -5,6 +5,30 @@ if [[ -n ${_DIFFSCRIBE_ZSH_LIB_LOADED-} ]]; then
 fi
 typeset -g _DIFFSCRIBE_ZSH_LIB_LOADED=1
 typeset -ga _diffscribe_stash_args=()
+typeset -g _diffscribe_git_orig_handler=""
+typeset -g _diffscribe_git_hook_registered=0
+
+_diffscribe_register_git_hook() {
+  (( !_diffscribe_git_hook_registered )) || return 0
+  autoload -Uz add-zsh-hook 2>/dev/null
+  if type add-zsh-hook >/dev/null 2>&1; then
+    if add-zsh-hook precmd diffscribe_wrap_git_completion 2>/dev/null; then
+      _diffscribe_git_hook_registered=1
+    fi
+  fi
+}
+
+_diffscribe_git_wrapper() {
+  if _diffscribe_complete_commit_message "$@"; then
+    return 0
+  fi
+
+  if [[ -n ${_diffscribe_git_orig_handler-} ]]; then
+    "${_diffscribe_git_orig_handler}" "$@"
+  else
+    return 1
+  fi
+}
 
 _diffscribe_log() {
   [[ -z ${DIFFSCRIBE_DEBUG-} ]] && return
@@ -231,28 +255,27 @@ diffscribe_wrap_git_completion() {
     return 1
   fi
 
-  local body
-  body=$(functions _git)
-  if [[ $body == *"_diffscribe_complete_commit_message"* ]]; then
-    _diffscribe_log "_git already wrapped"
+  local current_handler="${_comps[git]-}"
+  if [[ -z $current_handler ]]; then
+    current_handler=_git
+  fi
+
+  if [[ $current_handler == _diffscribe_git_wrapper ]]; then
+    if [[ -z ${_diffscribe_git_orig_handler-} ]]; then
+      _diffscribe_git_orig_handler=_git
+    fi
+    _diffscribe_register_git_hook
+    _diffscribe_log "git completion already wrapped"
     return 0
   fi
 
-  if ! functions -c _git _git_diffscribe_orig 2>/dev/null; then
-    _diffscribe_log "failed to copy _git"
-    return 1
-  fi
-
-  eval 'function _git() {
-    if _diffscribe_complete_commit_message "$@"; then
-      return 0;
-    fi;
-    _git_diffscribe_orig "$@";
-  }'
+  _diffscribe_git_orig_handler=$current_handler
 
   if type compdef >/dev/null 2>&1; then
-    compdef _git git >/dev/null 2>&1
+    compdef _diffscribe_git_wrapper git >/dev/null 2>&1
   fi
+
+  _diffscribe_register_git_hook
 
   return 0
 }
