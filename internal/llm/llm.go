@@ -15,6 +15,7 @@ type Context struct {
 	Branch string
 	Paths  []string
 	Diff   string
+	Prefix string
 }
 
 // Config controls how we call the OpenAI API.
@@ -73,6 +74,10 @@ func buildPrompt(data Context, max int) string {
 	fmt.Fprintf(&b, "Changed files (%d max shown):\n", len(data.Paths))
 	for _, p := range data.Paths {
 		fmt.Fprintf(&b, "- %s\n", p)
+	}
+	if trimmed := strings.TrimSpace(data.Prefix); trimmed != "" {
+		fmt.Fprintf(&b, "\nExisting commit message prefix: %s\n", trimmed)
+		b.WriteString("Continue each suggested message exactly from that prefix.\n")
 	}
 	b.WriteString("\nDiff (truncated when necessary):\n")
 	b.WriteString(data.Diff)

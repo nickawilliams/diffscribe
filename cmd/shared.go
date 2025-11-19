@@ -54,6 +54,7 @@ func generateCandidates(c gitContext, prefix string) []string {
 		FileCount:  len(c.Paths),
 		Summary:    joinLimit(c.Paths, 3),
 		DiffLength: len(c.Diff),
+		Prefix:     prefix,
 		Timestamp:  time.Now(),
 	}
 
@@ -67,6 +68,7 @@ func generateCandidates(c gitContext, prefix string) []string {
 		Branch: c.Branch,
 		Paths:  c.Paths,
 		Diff:   c.Diff,
+		Prefix: prefix,
 	}, cfg)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "diffscribe: LLM error:", err)
@@ -74,7 +76,7 @@ func generateCandidates(c gitContext, prefix string) []string {
 		return msgs
 	}
 
-	return stubCandidates(c)
+	return stubCandidates(c, prefix)
 }
 
 type templateData struct {
@@ -84,6 +86,7 @@ type templateData struct {
 	FileCount  int
 	Summary    string
 	DiffLength int
+	Prefix     string
 	Timestamp  time.Time
 }
 
@@ -153,15 +156,36 @@ func requireLLMConfig(cfg llm.Config) error {
 	return nil
 }
 
-func stubCandidates(c gitContext) []string {
+func stubCandidates(c gitContext, prefix string) []string {
 	summary := joinLimit(c.Paths, 3)
-	return []string{
+	suggestions := []string{
 		"feat: " + summary,
 		"fix: address issues in " + c.Branch,
 		"chore: update " + summary,
 		"refactor: simplify " + summary,
 		"docs: update docs for " + summary,
 	}
+
+	trimmed := strings.TrimSpace(prefix)
+	if trimmed == "" {
+		return suggestions
+	}
+
+	withPrefix := make([]string, 0, len(suggestions))
+	lowerPrefix := strings.ToLower(trimmed)
+	for _, cand := range suggestions {
+		if strings.HasPrefix(strings.ToLower(cand), lowerPrefix) {
+			withPrefix = append(withPrefix, cand)
+			continue
+		}
+		remainder := strings.TrimLeft(cand, " ")
+		if strings.HasSuffix(trimmed, " ") {
+			withPrefix = append(withPrefix, trimmed+remainder)
+		} else {
+			withPrefix = append(withPrefix, trimmed+" "+remainder)
+		}
+	}
+	return withPrefix
 }
 
 func run(name string, args ...string) string {

@@ -25,6 +25,10 @@ Files ({{ .FileCount }}):
 - {{ . }}
 {{- end }}
 
+{{- if .Prefix }}Existing commit message prefix: {{ .Prefix }}
+Continue every suggestion from that prefix.
+
+{{- end }}
 Truncated diff:
 {{ .Diff }}
 
