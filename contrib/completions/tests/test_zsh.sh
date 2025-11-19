@@ -105,6 +105,15 @@ run_completion "commit-candidate" git commit -m ''
 run_completion "stash-candidate" git stash push --include-untracked -- src -m ''
 run_completion "stash-candidate" git stash save -k ''
 
+words=(git commit -m draft)
+CURRENT=${#words}
+TEST_COMPLETIONS=()
+if ! _diffscribe_complete_commit_message; then
+  print -u2 -- "FAIL: commit prefix completion returned non-zero"
+  exit 1
+fi
+assert_eq "commit-candidate" "${TEST_COMPLETIONS[1]-}" "commit prefix completion"
+
 # Completing again with an existing message should still trigger diffscribe.
 words=(git commit -m 'commit-candidate' '')
 CURRENT=${#words}
