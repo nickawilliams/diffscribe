@@ -23,11 +23,23 @@ type gitContext struct {
 }
 
 func collectContext() (gitContext, error) {
+	if oid := strings.TrimSpace(os.Getenv("DIFFSCRIBE_STASH_COMMIT")); oid != "" {
+		return collectStashContext(oid), nil
+	}
+
 	return gitContext{
 		Branch: strings.TrimSpace(run("git", "rev-parse", "--abbrev-ref", "HEAD")),
 		Paths:  nonEmptyLines(run("git", "diff", "--cached", "--name-only")),
 		Diff:   capString(run("git", "diff", "--cached", "--unified=0"), 8000),
 	}, nil
+}
+
+func collectStashContext(oid string) gitContext {
+	return gitContext{
+		Branch: strings.TrimSpace(run("git", "rev-parse", "--abbrev-ref", "HEAD")),
+		Paths:  nonEmptyLines(run("git", "stash", "show", "--include-untracked", "--name-only", oid)),
+		Diff:   capString(run("git", "stash", "show", "--include-untracked", "--patch", oid), 8000),
+	}
 }
 
 func generateCandidates(c gitContext, prefix string) []string {

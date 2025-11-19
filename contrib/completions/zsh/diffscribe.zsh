@@ -1,4 +1,4 @@
-# diffscribe: inject git commit -m completion via diffscribe complete
+# diffscribe: inject git commit/stash message completion via diffscribe complete
 # Load after your normal git completion (`autoload -Uz compinit; compinit`).
 
 [[ -z ${ZSH_VERSION-} ]] && return 0

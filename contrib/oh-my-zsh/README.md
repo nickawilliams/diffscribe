@@ -1,7 +1,7 @@
 # diffscribe Oh-My-Zsh Plugin
 
 This plugin wraps the existing `git` completion shipped by Oh-My-Zsh (gitfast or stock) so that
-`git commit -m/--message` suggestions flow through `diffscribe complete`.
+`git commit -m/--message` and `git stash` message suggestions flow through `diffscribe complete`.
 
 ## Installation
 

@@ -1,5 +1,5 @@
 # diffscribe oh-my-zsh plugin
-# Injects diffscribe completions into `git commit -m/--message` prompts.
+# Injects diffscribe completions into git commit/stash message prompts.
 
 [[ -z ${ZSH_VERSION-} ]] && return 0
 
