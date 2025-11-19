@@ -199,8 +199,13 @@ _diffscribe_detect_stash_push_prefix() {
 _diffscribe_detect_stash_save_prefix() {
   _diffscribe_stash_args=()
   local stash_idx=0 save_idx=0 token
+  local skip_next=0
   for ((i = 1; i < CURRENT; i++)); do
     token=${words[i]}
+    if (( skip_next )); then
+      skip_next=0
+      continue
+    fi
     if (( ! stash_idx )) && [[ $token == stash ]]; then
       stash_idx=$i
       continue
@@ -212,6 +217,15 @@ _diffscribe_detect_stash_save_prefix() {
     fi
 
     if (( save_idx )); then
+      case $token in
+        -m|--message)
+          skip_next=1
+          continue
+          ;;
+        --message=*)
+          continue
+          ;;
+      esac
       if [[ $token == -* ]]; then
         _diffscribe_stash_args+=("$token")
         continue

@@ -104,6 +104,7 @@ run_completion() {
 run_completion "commit-candidate" git commit -m ''
 run_completion "stash-candidate" git stash push --include-untracked -- src -m ''
 run_completion "stash-candidate" git stash save -k ''
+run_completion "stash-candidate" git stash save -m ''
 
 words=(git commit -m draft)
 CURRENT=${#words}
