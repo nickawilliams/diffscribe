@@ -7,10 +7,28 @@ typeset -g _DIFFSCRIBE_ZSH_LIB_LOADED=1
 typeset -ga _diffscribe_stash_args=()
 typeset -g _diffscribe_git_orig_handler=""
 typeset -g _diffscribe_git_hook_registered=0
+typeset -g _diffscribe_status_mode=""
 
-_diffscribe_print_status() {
+_diffscribe_set_status() {
+  [[ -z ${DIFFSCRIBE_STATUS-} ]] && return 1
+  if zle -M "[diffscribe] completing…" 2>/dev/null; then
+    _diffscribe_status_mode="zle"
+    return 0
+  fi
+
+  print -rn -u2 -- $'\r[diffscribe] completing…'
+  _diffscribe_status_mode="stderr"
+  return 0
+}
+
+_diffscribe_clear_status() {
   [[ -z ${DIFFSCRIBE_STATUS-} ]] && return
-  print -rn -u2 -- "$1"
+  if [[ $_diffscribe_status_mode == zle ]]; then
+    zle -M "" 2>/dev/null
+  elif [[ $_diffscribe_status_mode == stderr ]]; then
+    print -rn -u2 -- $'\r\033[K'
+  fi
+  _diffscribe_status_mode=""
 }
 
 _diffscribe_register_git_hook() {
@@ -50,10 +68,18 @@ _diffscribe_clean_prefix() {
 }
 
 _diffscribe_detect_flag_prefix() {
-  local cur prev prefix="" intercept=0
+  local cur prev prevprev prefix="" intercept=0
   cur=${words[CURRENT]}
   if (( CURRENT > 1 )); then
     prev=${words[CURRENT-1]}
+  fi
+  if (( CURRENT > 2 )); then
+    prevprev=${words[CURRENT-2]}
+  fi
+
+  if [[ -z $cur && -n ${prev-} && ( $prevprev == "-m" || $prevprev == "--message" ) ]]; then
+    cur=$prev
+    prev=$prevprev
   fi
 
   if [[ $prev == "-m" || $prev == "--message" ]]; then
@@ -75,9 +101,17 @@ _diffscribe_detect_flag_prefix() {
 _diffscribe_detect_stash_push_prefix() {
   _diffscribe_stash_args=()
   local cur=${words[CURRENT]}
-  local prev=""
+  local prev="" prevprev=""
   if (( CURRENT > 1 )); then
     prev=${words[CURRENT-1]}
+  fi
+  if (( CURRENT > 2 )); then
+    prevprev=${words[CURRENT-2]}
+  fi
+
+  if [[ -z $cur && -n ${prev-} && ( $prevprev == "-m" || $prevprev == "--message" ) ]]; then
+    cur=$prev
+    prev=$prevprev
   fi
 
   local prefix="" intercept=0
@@ -176,6 +210,9 @@ _diffscribe_detect_stash_save_prefix() {
         _diffscribe_stash_args+=("$token")
         continue
       fi
+      if (( i == CURRENT - 1 )) && [[ -z ${words[CURRENT]-} ]]; then
+        continue
+      fi
       return 1
     fi
   done
@@ -183,6 +220,12 @@ _diffscribe_detect_stash_save_prefix() {
   (( stash_idx && save_idx && save_idx < CURRENT )) || return 1
 
   local cur=${words[CURRENT]}
+  if [[ -z $cur ]] && (( CURRENT > 1 )); then
+    local prev_word=${words[CURRENT-1]}
+    if [[ $prev_word != -* || $prev_word == '-' ]]; then
+      cur=$prev_word
+    fi
+  fi
   if [[ $cur == -* && $cur != "-" ]]; then
     return 1
   fi
@@ -233,14 +276,15 @@ _diffscribe_complete_commit_message() {
 
   local raw status_active=0
   if [[ -n ${DIFFSCRIBE_STATUS-} ]]; then
-    _diffscribe_print_status $'\r[diffscribe] completing…'
-    status_active=1
+    if _diffscribe_set_status; then
+      status_active=1
+    fi
   fi
 
   raw=$(_diffscribe_run_diffscribe "$clean" "$mode")
   local rc=$?
   if (( status_active )); then
-    _diffscribe_print_status $'\r\033[K'
+    _diffscribe_clear_status
     if (( rc != 0 )); then
       print -ru2 -- "[diffscribe] completion failed"
     fi

@@ -105,6 +105,34 @@ run_completion "commit-candidate" git commit -m ''
 run_completion "stash-candidate" git stash push --include-untracked -- src -m ''
 run_completion "stash-candidate" git stash save -k ''
 
+# Completing again with an existing message should still trigger diffscribe.
+words=(git commit -m 'commit-candidate' '')
+CURRENT=${#words}
+TEST_COMPLETIONS=()
+if ! _diffscribe_complete_commit_message; then
+  print -u2 -- "FAIL: repeat commit completion returned non-zero"
+  exit 1
+fi
+assert_eq "commit-candidate" "${TEST_COMPLETIONS[1]-}" "repeat commit completion"
+
+words=(git stash push --include-untracked -- src -m 'stash-candidate' '')
+CURRENT=${#words}
+TEST_COMPLETIONS=()
+if ! _diffscribe_complete_commit_message; then
+  print -u2 -- "FAIL: repeat stash push completion returned non-zero"
+  exit 1
+fi
+assert_eq "stash-candidate" "${TEST_COMPLETIONS[1]-}" "repeat stash push completion"
+
+words=(git stash save -k 'stash-candidate' '')
+CURRENT=${#words}
+TEST_COMPLETIONS=()
+if ! _diffscribe_complete_commit_message; then
+  print -u2 -- "FAIL: repeat stash save completion returned non-zero"
+  exit 1
+fi
+assert_eq "stash-candidate" "${TEST_COMPLETIONS[1]-}" "repeat stash save completion"
+
 print -- "zsh completion tests passed"
 
 # Ensure the git completion wrapper intercepts commit completions and falls back
