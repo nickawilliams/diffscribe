@@ -55,6 +55,7 @@ func generateCandidates(c gitContext, prefix string) []string {
 		Summary:    joinLimit(c.Paths, 3),
 		DiffLength: len(c.Diff),
 		Prefix:     prefix,
+		Format:     viper.GetString("format"),
 		Timestamp:  time.Now(),
 	}
 
@@ -87,6 +88,7 @@ type templateData struct {
 	Summary    string
 	DiffLength int
 	Prefix     string
+	Format     string
 	Timestamp  time.Time
 }
 
@@ -105,13 +107,13 @@ type userPromptData struct {
 
 func newLLMConfig(data templateData) llm.Config {
 	cfg := llm.Config{
-		APIKey:              strings.TrimSpace(viper.GetString("api_key")),
-		Provider:            strings.TrimSpace(viper.GetString("provider")),
-		Model:               strings.TrimSpace(viper.GetString("model")),
-		BaseURL:             strings.TrimSpace(viper.GetString("base_url")),
-		Temperature:         viper.GetFloat64("temperature"),
+		APIKey:              strings.TrimSpace(viper.GetString("llm.api_key")),
+		Provider:            strings.TrimSpace(viper.GetString("llm.provider")),
+		Model:               strings.TrimSpace(viper.GetString("llm.model")),
+		BaseURL:             strings.TrimSpace(viper.GetString("llm.base_url")),
+		Temperature:         viper.GetFloat64("llm.temperature"),
 		Quantity:            viper.GetInt("quantity"),
-		MaxCompletionTokens: viper.GetInt("max_completion_tokens"),
+		MaxCompletionTokens: viper.GetInt("llm.max_completion_tokens"),
 	}
 
 	sysData := systemPromptData{
