@@ -295,10 +295,8 @@ _diffscribe_complete_commit_message() {
   fi
 
   local raw status_active=0
-  if [[ -n ${DIFFSCRIBE_STATUS-} ]]; then
-    if _diffscribe_set_status; then
-      status_active=1
-    fi
+  if _diffscribe_status_enabled && _diffscribe_set_status; then
+    status_active=1
   fi
 
   raw=$(_diffscribe_run_diffscribe "$clean" "$mode")
