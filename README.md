@@ -1,5 +1,8 @@
 # diffscribe
 
+[![Build Status][ci-image]][ci-url]
+[![Code Coverage][coverage-image]][coverage-url]
+
 `diffscribe` is a CLI that inspects your staged Git changes and asks an LLM to craft high-quality Conventional Commit messages for you. It plugs into your shell completion, so `git commit -m "" <TAB>` yields AI suggestions that respect whatever prefix you already typed.
 
 ## Installation
@@ -70,3 +73,11 @@ make test/completions  # Bash, Zsh, Fish completion tests
 ```
 
 To rebuild the binary: `make build`. Use `make help` to see all targets.
+
+[ci-image]: https://img.shields.io/github/actions/workflow/status/nickawilliams/diffscribe/ci.yaml?logo=GitHub&logoColor=white
+
+<!-- [ci-image]: https://github.com/nickawilliams/diffscribe/actions/workflows/ci.yaml/badge.svg -->
+
+[ci-url]: https://github.com/nickawilliams/diffscribe/actions/workflows/ci.yaml
+[coverage-image]: https://img.shields.io/codecov/c/github/nickawilliams/diffscribe?logo=codecov&logoColor=white
+[coverage-url]: https://codecov.io/gh/nickawilliams/diffscribe
