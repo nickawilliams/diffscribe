@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -107,17 +108,83 @@ func initConfig() {
 	viper.BindEnv("api_key", "DIFFSCRIBE_API_KEY", "OPENAI_API_KEY")
 	viper.AutomaticEnv()
 
+	loadDotfileConfigs()
+
 	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		viper.SetConfigName("diffscribe")
-		viper.AddConfigPath(".")
-		if home, err := os.UserHomeDir(); err == nil {
-			viper.AddConfigPath(home)
-		}
+		mergeConfigIfExists(cfgFile, true)
+	}
+}
+
+func loadDotfileConfigs() {
+	home, _ := os.UserHomeDir()
+	xdg := os.Getenv("XDG_CONFIG_HOME")
+	if xdg == "" && home != "" {
+		xdg = filepath.Join(home, ".config")
 	}
 
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintf(os.Stderr, "Using config file: %s\n", viper.ConfigFileUsed())
+	var dirs []string
+	if xdg != "" {
+		dirs = append(dirs, filepath.Join(xdg, "diffscribe"))
 	}
+	if home != "" {
+		dirs = append(dirs, home)
+	}
+	dirs = append(dirs, ".")
+
+	for _, dir := range dirs {
+		loadConfigSet(dir)
+	}
+}
+
+func loadConfigSet(dir string) {
+	if dir == "" {
+		return
+	}
+	files := []string{
+		filepath.Join(dir, ".diffscribe"),
+		filepath.Join(dir, ".diffscribe.yaml"),
+		filepath.Join(dir, ".diffscribe.yml"),
+		filepath.Join(dir, ".diffscribe.toml"),
+		filepath.Join(dir, ".diffscribe.json"),
+	}
+	for _, f := range files {
+		mergeConfigIfExists(f, false)
+	}
+}
+
+func mergeConfigIfExists(path string, verbose bool) {
+	if path == "" {
+		return
+	}
+	info, err := os.Stat(path)
+	if err != nil || info.IsDir() {
+		return
+	}
+
+	cfg := viper.New()
+	if err := readConfigFile(cfg, path); err != nil {
+		fmt.Fprintf(os.Stderr, "diffscribe: unable to read config %s: %v\n", path, err)
+		return
+	}
+	if err := viper.MergeConfigMap(cfg.AllSettings()); err != nil {
+		fmt.Fprintf(os.Stderr, "diffscribe: unable to merge config %s: %v\n", path, err)
+		return
+	}
+	if verbose {
+		fmt.Fprintf(os.Stderr, "Using config file: %s\n", path)
+	}
+}
+
+func readConfigFile(cfg *viper.Viper, path string) error {
+	if ext := strings.ToLower(filepath.Ext(path)); ext != "" {
+		cfg.SetConfigFile(path)
+		return cfg.ReadInConfig()
+	}
+	cfg.SetConfigType("yaml")
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return cfg.ReadConfig(f)
 }

@@ -27,7 +27,13 @@ Set `DIFFSCRIBE_STATUS=0` if you want to suppress the in-prompt “loading…”
 
 ## Configuration
 
-Provide an API key via `DIFFSCRIBE_API_KEY` or `OPENAI_API_KEY`, or pass `--api-key` at runtime. Additional knobs live in `diffscribe.yaml` (automatically read from the current directory or `$HOME`), including provider, model, temperature, quantity, and prompt overrides.
+Provide an API key via `DIFFSCRIBE_API_KEY` or `OPENAI_API_KEY`, or pass `--api-key` at runtime. Configuration lives in `.diffscribe{.yaml,.toml,.json}`—we merge files in this precedence order:
+
+1. `$XDG_CONFIG_HOME/diffscribe/.diffscribe*` (or `$HOME/.config/diffscribe`)
+2. `$HOME/.diffscribe*`
+3. `./.diffscribe*` (per-project)
+
+Each file only overrides the keys it specifies, so global defaults flow into project configs.
 
 ## Usage
 
