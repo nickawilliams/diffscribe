@@ -14,7 +14,7 @@ var cfgFile string
 
 const defaultSystemPrompt = `You control the style, tone, and formatting of the commit messages.
 Always apply these rules:
-- Use Conventional Commit prefixes (feat, fix, chore, docs, refactor, test, build, ci).
+- Respect the requested commit message format exactly as described by the user.
 - Summarize the behavioral intent or impact—never just list files or directories.
 - When possible, mention the motivation or effect inferred from the diff.
 - Produce sentence fragments without trailing punctuation and keep them under ~72 characters.
@@ -25,6 +25,9 @@ Files ({{ .FileCount }}):
 {{- range .Paths }}
 - {{ . }}
 {{- end }}
+
+Desired commit message format:
+{{ .Format }}
 
 {{- if .Prefix }}Existing commit message prefix: {{ .Prefix }}
 Continue every suggestion from that prefix.
@@ -75,31 +78,35 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default searches diffscribe.{yaml,json,toml})")
-	rootCmd.PersistentFlags().String("api-key", "", "LLM provider API key")
-	rootCmd.PersistentFlags().String("provider", defaultProvider, "LLM provider (openai, openrouter, etc.)")
-	rootCmd.PersistentFlags().String("model", defaultModel, "LLM model identifier")
-	rootCmd.PersistentFlags().String("base-url", defaultBaseURL, "LLM API base URL")
+	rootCmd.PersistentFlags().String("llm-api-key", "", "LLM provider API key")
+	rootCmd.PersistentFlags().String("llm-provider", defaultProvider, "LLM provider (openai, openrouter, etc.)")
+	rootCmd.PersistentFlags().String("llm-model", defaultModel, "LLM model identifier")
+	rootCmd.PersistentFlags().String("llm-base-url", defaultBaseURL, "LLM API base URL")
 	rootCmd.PersistentFlags().String("system-prompt", defaultSystemPrompt, "LLM system prompt override")
 	rootCmd.PersistentFlags().String("user-prompt", defaultUserPrompt, "LLM user prompt override")
-	rootCmd.PersistentFlags().Float64("temperature", defaultTemperature, "LLM sampling temperature")
-	rootCmd.PersistentFlags().Int("quantity", defaultQuantity, "number of suggestions to request from the LLM")
-	rootCmd.PersistentFlags().Int("max-completion-tokens", defaultMaxCompletionTokens, "max completion tokens to request from the LLM (0 = provider default)")
+	rootCmd.PersistentFlags().String("format", "Conventional Commit style (prefix + summary)", "Commit message format description or template")
+	rootCmd.PersistentFlags().Float64("llm-temperature", defaultTemperature, "LLM sampling temperature")
+	rootCmd.PersistentFlags().Int("quantity", defaultQuantity, "number of suggestions to request")
+	rootCmd.PersistentFlags().Int("llm-max-completion-tokens", defaultMaxCompletionTokens, "max completion tokens to request from the LLM (0 = provider default)")
 
-	_ = viper.BindPFlag("api_key", rootCmd.PersistentFlags().Lookup("api-key"))
-	_ = viper.BindPFlag("provider", rootCmd.PersistentFlags().Lookup("provider"))
-	_ = viper.BindPFlag("model", rootCmd.PersistentFlags().Lookup("model"))
-	_ = viper.BindPFlag("base_url", rootCmd.PersistentFlags().Lookup("base-url"))
+	_ = viper.BindPFlag("llm.api_key", rootCmd.PersistentFlags().Lookup("llm-api-key"))
+	_ = viper.BindPFlag("llm.provider", rootCmd.PersistentFlags().Lookup("llm-provider"))
+	_ = viper.BindPFlag("llm.model", rootCmd.PersistentFlags().Lookup("llm-model"))
+	_ = viper.BindPFlag("llm.base_url", rootCmd.PersistentFlags().Lookup("llm-base-url"))
 	_ = viper.BindPFlag("system_prompt", rootCmd.PersistentFlags().Lookup("system-prompt"))
-	_ = viper.BindPFlag("temperature", rootCmd.PersistentFlags().Lookup("temperature"))
+	_ = viper.BindPFlag("user_prompt", rootCmd.PersistentFlags().Lookup("user-prompt"))
+	_ = viper.BindPFlag("format", rootCmd.PersistentFlags().Lookup("format"))
+	_ = viper.BindPFlag("llm.temperature", rootCmd.PersistentFlags().Lookup("llm-temperature"))
 	_ = viper.BindPFlag("quantity", rootCmd.PersistentFlags().Lookup("quantity"))
-	_ = viper.BindPFlag("max_completion_tokens", rootCmd.PersistentFlags().Lookup("max-completion-tokens"))
+	_ = viper.BindPFlag("llm.max_completion_tokens", rootCmd.PersistentFlags().Lookup("llm-max-completion-tokens"))
 
-	viper.SetDefault("provider", defaultProvider)
-	viper.SetDefault("model", defaultModel)
-	viper.SetDefault("base_url", defaultBaseURL)
-	viper.SetDefault("temperature", defaultTemperature)
-	viper.SetDefault("quantity", defaultQuantity)
-	viper.SetDefault("max_completion_tokens", defaultMaxCompletionTokens)
+	viper.SetDefault("llm.provider", defaultProvider)
+	viper.SetDefault("llm.model", defaultModel)
+	viper.SetDefault("llm.base_url", defaultBaseURL)
+	viper.SetDefault("llm.temperature", defaultTemperature)
+	viper.SetDefault("llm.quantity", defaultQuantity)
+	viper.SetDefault("llm.max_completion_tokens", defaultMaxCompletionTokens)
+	viper.SetDefault("format", "Conventional Commit style (prefix + summary)")
 }
 
 func initConfig() {

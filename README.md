@@ -27,13 +27,24 @@ Set `DIFFSCRIBE_STATUS=0` if you want to suppress the in-prompt “loading…”
 
 ## Configuration
 
-Provide an API key via `DIFFSCRIBE_API_KEY` or `OPENAI_API_KEY`, or pass `--api-key` at runtime. Configuration lives in `.diffscribe{.yaml,.toml,.json}`—we merge files in this precedence order:
+Provide an API key via `DIFFSCRIBE_API_KEY` or `OPENAI_API_KEY`, or pass `--llm-api-key` at runtime. Configuration lives in `.diffscribe{,.yaml,.toml,.json}`—we merge files in this precedence order:
 
 1. `$XDG_CONFIG_HOME/diffscribe/.diffscribe*` (or `$HOME/.config/diffscribe`)
 2. `$HOME/.diffscribe*`
 3. `./.diffscribe*` (per-project)
 
-Each file only overrides the keys it specifies, so global defaults flow into project configs.
+Each file only overrides the keys it specifies, so global defaults flow into project configs. LLM settings sit under an `llm` block, for example:
+
+```yaml
+llm:
+  apiKey: $DIFFSCRIBE_API_KEY
+  provider: openai
+  model: gpt-4o-mini
+  baseUrl: https://api.openai.com/v1/chat/completions
+  temperature: 0.8
+  quantity: 5
+  maxCompletionTokens: 512
+```
 
 ## Usage
 
