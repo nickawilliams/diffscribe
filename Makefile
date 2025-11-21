@@ -34,7 +34,7 @@ INSTALL_BASH_DIR := $(dir $(INSTALL_BASH))
 INSTALL_FISH_DIR := $(dir $(INSTALL_FISH))
 OMZ_CUSTOM ?= $(HOME)/.oh-my-zsh/custom
 OMZ_PLUGIN_DIR := $(OMZ_CUSTOM)/plugins/diffscribe
-OMZ_PLUGIN_SRC := contrib/oh-my-zsh/diffscribe.plugin.zsh
+OMZ_PLUGIN_SRC := contrib/completions/zsh/diffscribe.plugin.zsh
 OMZ_PLUGIN_DEST := $(OMZ_PLUGIN_DIR)/diffscribe.plugin.zsh
 OMZ_PLUGIN_LIB := $(OMZ_PLUGIN_DIR)/$(ZSH_LIB_NAME)
 
@@ -81,15 +81,15 @@ test/completions: test/completions/bash test/completions/zsh test/completions/fi
 
 ## Run Bash completion tests
 test/completions/bash:
-	@bash contrib/completions/tests/test_bash.sh
+	@bash contrib/completions/bash/diffscribe.test.bash
 
 ## Run Zsh completion tests
 test/completions/zsh:
-	@zsh contrib/completions/tests/test_zsh.sh
+	@zsh contrib/completions/zsh/diffscribe.test.zsh
 
 ## Run Fish completion tests
 test/completions/fish:
-	@fish contrib/completions/tests/test_fish.fish
+	@fish contrib/completions/fish/diffscribe.test.fish
 
 ## Run benchmarks for the LLM client
 bench:
