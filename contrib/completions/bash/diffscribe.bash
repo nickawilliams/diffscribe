@@ -10,13 +10,15 @@ fi
 _diffscribe_candidates() {
   local prefix=$1
   local mode=${2-}
+  local qty=${DIFFSCRIBE_QUANTITY:-1}
+  local diffscribe_cmd=(diffscribe --quantity "$qty")
   if [[ $mode == "stash" ]]; then
     local oid
     oid=$(command git stash create "${_diffscribe_stash_args[@]}" 2>/dev/null) || return
     [[ -n $oid ]] || return
-    DIFFSCRIBE_STASH_COMMIT=$oid diffscribe "$prefix" 2>/dev/null
+    DIFFSCRIBE_STASH_COMMIT=$oid "${diffscribe_cmd[@]}" "$prefix" 2>/dev/null
   else
-    diffscribe "$prefix" 2>/dev/null
+    "${diffscribe_cmd[@]}" "$prefix" 2>/dev/null
   fi
 }
 

@@ -248,6 +248,8 @@ _diffscribe_detect_stash_save_prefix() {
 _diffscribe_run_diffscribe() {
   local prefix=$1 mode=$2 raw=""
 
+  local qty=${DIFFSCRIBE_QUANTITY:-5}
+  local diffscribe_cmd=(command diffscribe --quantity "$qty")
   if [[ $mode == stash ]]; then
     local oid
     oid=$(command git stash create "${_diffscribe_stash_args[@]}" 2>/dev/null)
@@ -255,9 +257,9 @@ _diffscribe_run_diffscribe() {
       _diffscribe_log "git stash create failed"
       return 1
     fi
-    raw=$(DIFFSCRIBE_STASH_COMMIT=$oid command diffscribe "$prefix" 2>/dev/null)
+    raw=$(DIFFSCRIBE_STASH_COMMIT=$oid ${diffscribe_cmd[@]} "$prefix" 2>/dev/null)
   else
-    raw=$(command diffscribe "$prefix" 2>/dev/null)
+    raw=$(${diffscribe_cmd[@]} "$prefix" 2>/dev/null)
   fi
 
   printf '%s' "$raw"

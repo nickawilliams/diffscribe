@@ -106,6 +106,11 @@ function __diffscribe_fish_candidates --description 'Call diffscribe for suggest
     end
 
     set -l output
+    set -l qty 5
+    if set -q DIFFSCRIBE_QUANTITY
+        set qty $DIFFSCRIBE_QUANTITY
+    end
+
     if test "$context" = "stash"
         set -l args
         if set -q __diffscribe_stash_args[1]
@@ -116,9 +121,9 @@ function __diffscribe_fish_candidates --description 'Call diffscribe for suggest
         if test -z "$oid"
             return
         end
-        set output (env DIFFSCRIBE_STASH_COMMIT=$oid diffscribe "$prefix" 2>/dev/null)
+        set output (env DIFFSCRIBE_STASH_COMMIT=$oid command diffscribe --quantity $qty "$prefix" 2>/dev/null)
     else
-        set output (command diffscribe "$prefix" 2>/dev/null)
+        set output (command diffscribe --quantity $qty "$prefix" 2>/dev/null)
     end
 
     if test -z "$output"
