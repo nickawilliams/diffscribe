@@ -36,7 +36,7 @@ Continue every suggestion from that prefix.
 Truncated diff:
 {{ .Diff }}
 
-Generate {{ .MaxOutputs }} commit message candidates using the formatting rules from the system instructions. Return only a JSON array of strings.`
+Generate {{ .Quantity }} commit message candidates using the formatting rules from the system instructions. Return only a JSON array of strings.`
 
 const (
 	defaultProvider            = "openai"
@@ -112,7 +112,7 @@ func init() {
 func initConfig() {
 	viper.SetEnvPrefix("diffscribe")
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
-	viper.BindEnv("api_key", "DIFFSCRIBE_API_KEY", "OPENAI_API_KEY")
+	viper.BindEnv("llm.api_key", "DIFFSCRIBE_API_KEY", "OPENAI_API_KEY")
 	viper.AutomaticEnv()
 
 	loadDotfileConfigs()

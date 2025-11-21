@@ -205,23 +205,54 @@ uninstall/all: uninstall/binary uninstall/completions/zsh uninstall/completions/
 
 uninstall/binary:
 	@echo "🗑️  Removing binary $(INSTALL_BIN)"
-	@rm -f $(INSTALL_BIN)
+	@if [ -w $(INSTALL_BIN_DIR) ]; then \
+		rm -f $(INSTALL_BIN); \
+	else \
+		echo "🔐 Elevated permissions required — using sudo"; \
+		sudo rm -f $(INSTALL_BIN); \
+	fi
 
 uninstall/completions/zsh:
 	@echo "🗑️  Removing Zsh completion assets"
-	@rm -f $(INSTALL_ZSH) $(INSTALL_ZSH_LIB)
+	@if [ -w $(INSTALL_ZSH_DIR) ]; then \
+		rm -f $(INSTALL_ZSH); \
+	else \
+		echo "🔐 Elevated permissions required — using sudo"; \
+		sudo rm -f $(INSTALL_ZSH); \
+	fi
+	@if [ -w $(INSTALL_ZSH_LIB_DIR) ]; then \
+		rm -f $(INSTALL_ZSH_LIB); \
+	else \
+		echo "🔐 Elevated permissions required — using sudo"; \
+		sudo rm -f $(INSTALL_ZSH_LIB); \
+	fi
 
 uninstall/completions/bash:
 	@echo "🗑️  Removing Bash completion"
-	@rm -f $(INSTALL_BASH)
+	@if [ -w $(INSTALL_BASH_DIR) ]; then \
+		rm -f $(INSTALL_BASH); \
+	else \
+		echo "🔐 Elevated permissions required — using sudo"; \
+		sudo rm -f $(INSTALL_BASH); \
+	fi
 
 uninstall/completions/fish:
 	@echo "🗑️  Removing Fish completion"
-	@rm -f $(INSTALL_FISH)
+	@if [ -w $(INSTALL_FISH_DIR) ]; then \
+		rm -f $(INSTALL_FISH); \
+	else \
+		echo "🔐 Elevated permissions required — using sudo"; \
+		sudo rm -f $(INSTALL_FISH); \
+	fi
 
 uninstall/completions/oh-my-zsh:
 	@echo "🗑️  Removing Oh-My-Zsh plugin"
-	@rm -f $(OMZ_PLUGIN_DEST) $(OMZ_PLUGIN_LIB)
+	@if [ -w $(OMZ_PLUGIN_DIR) ]; then \
+		rm -f $(OMZ_PLUGIN_DEST) $(OMZ_PLUGIN_LIB); \
+	else \
+		echo "🔐 Elevated permissions required — using sudo"; \
+		sudo rm -f $(OMZ_PLUGIN_DEST) $(OMZ_PLUGIN_LIB); \
+	fi
 
 # Utils
 # ============================================================================

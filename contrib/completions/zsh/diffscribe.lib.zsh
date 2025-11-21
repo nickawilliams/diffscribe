@@ -8,7 +8,8 @@ typeset -ga _diffscribe_stash_args=()
 typeset -g _diffscribe_git_orig_handler=""
 typeset -g _diffscribe_git_hook_registered=0
 typeset -g _diffscribe_status_mode=""
-typeset -g _diffscribe_status_text="[diffscribe] loading…"
+typeset -g _diffscribe_status_text="reticulating splines…"
+typeset -g _diffscribe_status_text_stderr=$'\033[90m'${_diffscribe_status_text}$'\033[0m'
 
 _diffscribe_status_enabled() {
   [[ ${DIFFSCRIBE_STATUS:-1} != 0 ]]
@@ -17,24 +18,14 @@ _diffscribe_status_enabled() {
 _diffscribe_set_status() {
   _diffscribe_status_enabled || return 1
   local msg=${_diffscribe_status_text}
-  if zle -M "$msg" 2>/dev/null; then
+  if zle -R -- "$msg" 2>/dev/null; then
     _diffscribe_status_mode="zle"
     return 0
   fi
 
-  print -rn -u2 -- $'\r'"$msg"
+  print -rn -u2 -- $'\r'"${_diffscribe_status_text_stderr:-$_diffscribe_status_text}"
   _diffscribe_status_mode="stderr"
   return 0
-}
-
-_diffscribe_clear_status() {
-  _diffscribe_status_enabled || return
-  if [[ $_diffscribe_status_mode == zle ]]; then
-    zle -M "" 2>/dev/null
-  elif [[ $_diffscribe_status_mode == stderr ]]; then
-    print -rn -u2 -- $'\r\033[K'
-  fi
-  _diffscribe_status_mode=""
 }
 
 _diffscribe_register_git_hook() {
@@ -302,7 +293,9 @@ _diffscribe_complete_commit_message() {
   raw=$(_diffscribe_run_diffscribe "$clean" "$mode")
   local rc=$?
   if (( status_active )); then
-    _diffscribe_clear_status
+    if [[ $_diffscribe_status_mode == stderr ]]; then
+      print -rn -u2 -- $'\r\033[K'
+    fi
     if (( rc != 0 )); then
       print -ru2 -- "[diffscribe] completion failed"
     fi
