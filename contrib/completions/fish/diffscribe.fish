@@ -14,17 +14,30 @@ function __diffscribe_fish_status_start
     if not __diffscribe_fish_status_enabled
         return 1
     end
+
+    if status --is-interactive
+        printf '\033[s\033[90m%s\033[0m\033[u' $__diffscribe_fish_status_text >&2
+        set -g __diffscribe_fish_status_mode cursor
+        return 0
+    end
+
     set -g __diffscribe_fish_status_mode stderr
     printf '\r\033[90m%s\033[0m' $__diffscribe_fish_status_text >&2
     return 0
 end
 
 function __diffscribe_fish_status_finish --argument-names rc
-    if test "$__diffscribe_fish_status_mode" = "stderr"
-        printf '\r\033[K' >&2
-        if test "$rc" -ne 0
-            printf '[diffscribe] completion failed\n' >&2
-        end
+    switch "$__diffscribe_fish_status_mode"
+        case cursor
+            commandline -f repaint 2>/dev/null
+            if test "$rc" -ne 0
+                printf '[diffscribe] completion failed\n' >&2
+            end
+        case stderr
+            printf '\r\033[K' >&2
+            if test "$rc" -ne 0
+                printf '[diffscribe] completion failed\n' >&2
+            end
     end
     set -g __diffscribe_fish_status_mode ''
 end
