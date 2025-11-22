@@ -1,4 +1,34 @@
 # diffscribe fish completion
+set -g __diffscribe_fish_status_text 'reticulating splines…'
+set -g __diffscribe_fish_status_mode ''
+
+function __diffscribe_fish_status_enabled
+    if set -q DIFFSCRIBE_STATUS
+        test "$DIFFSCRIBE_STATUS" != "0"
+        return $status
+    end
+    return 0
+end
+
+function __diffscribe_fish_status_start
+    if not __diffscribe_fish_status_enabled
+        return 1
+    end
+    set -g __diffscribe_fish_status_mode stderr
+    printf '\r\033[90m%s\033[0m' $__diffscribe_fish_status_text >&2
+    return 0
+end
+
+function __diffscribe_fish_status_finish --argument-names rc
+    if test "$__diffscribe_fish_status_mode" = "stderr"
+        printf '\r\033[K' >&2
+        if test "$rc" -ne 0
+            printf '[diffscribe] completion failed\n' >&2
+        end
+    end
+    set -g __diffscribe_fish_status_mode ''
+end
+
 function __diffscribe_fish_quantity
     if set -q DIFFSCRIBE_QUANTITY
         echo $DIFFSCRIBE_QUANTITY
@@ -12,7 +42,19 @@ function __diffscribe_fish_call --argument-names prefix
         return
     end
     set -l qty (__diffscribe_fish_quantity)
-    command diffscribe --quantity $qty "$prefix" 2>/dev/null
+    set -l status_active 0
+    if __diffscribe_fish_status_start
+        set status_active 1
+    end
+    set -l raw (command diffscribe --quantity $qty "$prefix" 2>/dev/null)
+    set -l rc $status
+    if test $status_active -eq 1
+        __diffscribe_fish_status_finish $rc
+    end
+    if test $rc -ne 0
+        return
+    end
+    printf '%s\n' $raw
 end
 
 function __diffscribe_fish_commit
