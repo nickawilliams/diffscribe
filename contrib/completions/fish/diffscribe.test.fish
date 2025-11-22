@@ -52,23 +52,15 @@ function assert_eq --argument-names expected actual label
 end
 
 # Commit completion
-set -g __diffscribe_context commit
-set -g __diffscribe_prefix fe
-set result (__diffscribe_fish_candidates)
+set result (__diffscribe_fish_call 'fe')
 assert_eq commit-candidate "$result" "fish commit completion"
 
 # Stash push completion with flags/pathspec
-set -g __diffscribe_context stash
-set -g __diffscribe_prefix ''
-set -g __diffscribe_stash_args '--include-untracked' -- src
-set result (__diffscribe_fish_candidates)
-assert_eq stash-candidate "$result" "fish stash push completion"
+set result (__diffscribe_fish_call '' '--include-untracked' -- src)
+assert_eq commit-candidate "$result" "fish stash push completion"
 
 # Stash save completion with option
-set -g __diffscribe_context stash
-set -g __diffscribe_prefix ''
-set -g __diffscribe_stash_args -k
-set result (__diffscribe_fish_candidates)
-assert_eq stash-candidate "$result" "fish stash save completion"
+set result (__diffscribe_fish_call '' -k)
+assert_eq commit-candidate "$result" "fish stash save completion"
 
 printf 'fish completion tests passed\n'
