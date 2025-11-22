@@ -5,7 +5,13 @@ OUT_DIR := .out
 BUILD_BIN := $(OUT_DIR)/build/$(BINARY)
 
 PREFIX ?= /usr/local/bin
+PREFIX_ROOT := $(patsubst %/,%,$(dir $(PREFIX)))
 INSTALL_BIN := $(PREFIX)/$(BINARY)
+MANPREFIX ?= $(PREFIX_ROOT)/share/man
+MANDIR := $(MANPREFIX)/man1
+MANPAGE := diffscribe.1
+MANPAGE_SRC := contrib/man/$(MANPAGE)
+INSTALL_MAN := $(MANDIR)/$(MANPAGE)
 
 # Completion install locations
 ZSH_DIR := $(HOME)/.zsh
@@ -45,8 +51,9 @@ OMZ_PLUGIN_LIB := $(OMZ_PLUGIN_DIR)/$(ZSH_LIB_NAME)
 .PHONY: default clean build install install/all install/binary \
 	install/completions/all install/completions/zsh install/completions/zsh/lib \
 	install/completions/bash install/completions/fish install/completions/oh-my-zsh \
-	link uninstall uninstall/all uninstall/binary uninstall/completions/zsh \
+	install/man link uninstall uninstall/all uninstall/binary uninstall/completions/zsh \
 	uninstall/completions/bash uninstall/completions/fish uninstall/completions/oh-my-zsh \
+	uninstall/man \
 	test test/completions test/completions/bash test/completions/zsh \
 	test/completions/fish bench format help vars _print-var
 
@@ -104,7 +111,7 @@ format:
 ## Install just the binary
 install: install/binary
 
-install/all: install/binary install/completions/all
+install/all: install/binary install/completions/all install/man
 
 install/binary: build
 	@echo "📦 Installing binary → $(INSTALL_BIN)"
@@ -168,6 +175,16 @@ install/completions/oh-my-zsh: install/completions/zsh/lib
 	fi
 	@echo "👉 Add 'diffscribe' to the plugins list in ~/.zshrc"
 
+install/man:
+	@echo "📦 Installing man page → $(INSTALL_MAN)"
+	@if [ -w $(MANPREFIX) ]; then \
+		install -Dm644 $(MANPAGE_SRC) $(INSTALL_MAN); \
+	else \
+		echo "🔐 Elevated permissions required — using sudo"; \
+		sudo install -Dm644 $(MANPAGE_SRC) $(INSTALL_MAN); \
+	fi
+	@echo "👉 View it via 'man diffscribe'"
+
 ## Symlink every artifact (binary + all completions) back to the repo
 link: build
 	@echo "🔗 Linking binary → $(INSTALL_BIN)"
@@ -196,12 +213,22 @@ link: build
 	@install -d $(OMZ_PLUGIN_DIR)
 	@ln -sfn "$(CURDIR)/$(OMZ_PLUGIN_SRC)" $(OMZ_PLUGIN_DEST)
 	@ln -sfn "$(CURDIR)/$(ZSH_LIB_SRC)" $(OMZ_PLUGIN_LIB)
+	@echo "🔗 Linking man page → $(INSTALL_MAN)"
+	@mandir=$(MANDIR); \
+	if [ -w "$$mandir" ]; then \
+		install -d "$$mandir"; \
+		ln -sfn "$(CURDIR)/$(MANPAGE_SRC)" $(INSTALL_MAN); \
+	else \
+		echo "🔐 Elevated permissions required — using sudo"; \
+		sudo install -d "$$mandir"; \
+		sudo ln -sfn "$(CURDIR)/$(MANPAGE_SRC)" $(INSTALL_MAN); \
+	fi
 	@echo "✅ Linked all artifacts (remember to source ~/.zsh/diffscribe.zsh or add 'diffscribe' to OMZ plugins)"
 
 ## Remove the installed binary
 uninstall: uninstall/binary
 
-uninstall/all: uninstall/binary uninstall/completions/zsh uninstall/completions/bash uninstall/completions/fish uninstall/completions/oh-my-zsh
+uninstall/all: uninstall/binary uninstall/completions/zsh uninstall/completions/bash uninstall/completions/fish uninstall/completions/oh-my-zsh uninstall/man
 
 uninstall/binary:
 	@echo "🗑️  Removing binary $(INSTALL_BIN)"
@@ -252,6 +279,15 @@ uninstall/completions/oh-my-zsh:
 	else \
 		echo "🔐 Elevated permissions required — using sudo"; \
 		sudo rm -f $(OMZ_PLUGIN_DEST) $(OMZ_PLUGIN_LIB); \
+	fi
+
+uninstall/man:
+	@echo "🗑️  Removing man page $(INSTALL_MAN)"
+	@if [ -w $(MANDIR) ]; then \
+		rm -f $(INSTALL_MAN); \
+	else \
+		echo "🔐 Elevated permissions required — using sudo"; \
+		sudo rm -f $(INSTALL_MAN); \
 	fi
 
 # Utils

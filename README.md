@@ -14,6 +14,8 @@ Prerequisites: Go 1.21+ and an OpenAI-compatible API key.
 make install
 # (optional) install completions for all shells
 make install/completions/all
+# (optional) install the man page
+make install/man
 ```
 
 By default the binary is installed to `/usr/local/bin`. Override `PREFIX` if needed, e.g. `PREFIX=$HOME/.local/bin make install`.
@@ -27,6 +29,10 @@ After installing the binary, enable completion in your shell of choice.
 - **Fish**: completions auto-load from `~/.config/fish/completions/diffscribe.fish`.
 
 Set `DIFFSCRIBE_STATUS=0` if you want to suppress the in-prompt “loading…” indicator.
+
+### Man page
+
+Run `make install/man` (or `make install/all`) to copy `diffscribe(1)` into your manpath (defaults to `/usr/local/share/man/man1`). Afterwards you can type `man diffscribe` for a concise reference covering flags, environment variables, and config file locations.
 
 ## Configuration
 
