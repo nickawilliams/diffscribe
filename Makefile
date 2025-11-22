@@ -51,7 +51,7 @@ OMZ_PLUGIN_LIB := $(OMZ_PLUGIN_DIR)/$(ZSH_LIB_NAME)
 .PHONY: default clean build install install/all install/binary \
 	install/completions/all install/completions/zsh install/completions/zsh/lib \
 	install/completions/bash install/completions/fish install/completions/oh-my-zsh \
-	install/man link uninstall uninstall/all uninstall/binary uninstall/completions/zsh \
+	install/man man link uninstall uninstall/all uninstall/binary uninstall/completions/zsh \
 	uninstall/completions/bash uninstall/completions/fish uninstall/completions/oh-my-zsh \
 	uninstall/man \
 	test test/completions test/completions/bash test/completions/zsh \
@@ -115,11 +115,12 @@ install/all: install/binary install/completions/all install/man
 
 install/binary: build
 	@echo "📦 Installing binary → $(INSTALL_BIN)"
-	@if [ -w $(PREFIX) ]; then \
-		install -Dm755 $(BUILD_BIN) $(INSTALL_BIN); \
+	@if install -d $(INSTALL_BIN_DIR) >/dev/null 2>&1; then \
+		install -m755 $(BUILD_BIN) $(INSTALL_BIN); \
 	else \
 		echo "🔐 Elevated permissions required — using sudo"; \
-		sudo install -Dm755 $(BUILD_BIN) $(INSTALL_BIN); \
+		sudo install -d $(INSTALL_BIN_DIR); \
+		sudo install -m755 $(BUILD_BIN) $(INSTALL_BIN); \
 	fi
 	@echo "✅ Binary installed"
 
@@ -129,7 +130,7 @@ install/completions/zsh: install/completions/zsh/lib
 	@echo "📦 Installing Zsh completion assets into $(ZSH_DIR)"
 	@mkdir -p $(ZSH_DIR)
 	@if [ -f $(ZSH_SCRIPT_SRC) ]; then \
-		install -Dm644 $(ZSH_SCRIPT_SRC) $(INSTALL_ZSH); \
+		install -m644 $(ZSH_SCRIPT_SRC) $(INSTALL_ZSH); \
 	else \
 		echo "⚠️  Missing $(ZSH_SCRIPT_SRC); skipping diffscribe.zsh"; \
 	fi
@@ -139,7 +140,7 @@ install/completions/zsh/lib:
 	@echo "📦 Installing Zsh shared helpers → $(INSTALL_ZSH_LIB)"
 	@mkdir -p $(ZSH_DIR)
 	@if [ -f $(ZSH_LIB_SRC) ]; then \
-		install -Dm644 $(ZSH_LIB_SRC) $(INSTALL_ZSH_LIB); \
+		install -m644 $(ZSH_LIB_SRC) $(INSTALL_ZSH_LIB); \
 	else \
 		echo "⚠️  Missing $(ZSH_LIB_SRC); skipping shared helpers"; \
 	fi
@@ -148,7 +149,7 @@ install/completions/bash:
 	@echo "📦 Installing Bash completion → $(INSTALL_BASH)"
 	@mkdir -p $(BASH_DIR)
 	@if [ -f $(BASH_SCRIPT_SRC) ]; then \
-		install -Dm644 $(BASH_SCRIPT_SRC) $(INSTALL_BASH); \
+		install -m644 $(BASH_SCRIPT_SRC) $(INSTALL_BASH); \
 	else \
 		echo "⚠️  Missing $(BASH_SCRIPT_SRC); skipping Bash completion"; \
 	fi
@@ -158,7 +159,7 @@ install/completions/fish:
 	@echo "📦 Installing Fish completion → $(INSTALL_FISH)"
 	@mkdir -p $(FISH_DIR)
 	@if [ -f $(FISH_SCRIPT_SRC) ]; then \
-		install -Dm644 $(FISH_SCRIPT_SRC) $(INSTALL_FISH); \
+		install -m644 $(FISH_SCRIPT_SRC) $(INSTALL_FISH); \
 	else \
 		echo "⚠️  Missing $(FISH_SCRIPT_SRC); skipping Fish completion"; \
 	fi
@@ -168,25 +169,30 @@ install/completions/oh-my-zsh: install/completions/zsh/lib
 	@if [ -f $(OMZ_PLUGIN_SRC) ]; then \
 		echo "📦 Installing Oh-My-Zsh plugin → $(OMZ_PLUGIN_DEST)"; \
 		mkdir -p $(OMZ_PLUGIN_DIR); \
-		install -Dm644 $(OMZ_PLUGIN_SRC) $(OMZ_PLUGIN_DEST); \
-		install -Dm644 $(ZSH_LIB_SRC) $(OMZ_PLUGIN_LIB); \
+		install -m644 $(OMZ_PLUGIN_SRC) $(OMZ_PLUGIN_DEST); \
+		install -m644 $(ZSH_LIB_SRC) $(OMZ_PLUGIN_LIB); \
 	else \
 		echo "⚠️  Missing $(OMZ_PLUGIN_SRC); skipping Oh-My-Zsh plugin"; \
 	fi
 	@echo "👉 Add 'diffscribe' to the plugins list in ~/.zshrc"
 
-install/man:
+install/man: man
 	@echo "📦 Installing man page → $(INSTALL_MAN)"
-	@if [ -w $(MANPREFIX) ]; then \
-		install -Dm644 $(MANPAGE_SRC) $(INSTALL_MAN); \
+	@if install -d $(MANDIR) >/dev/null 2>&1; then \
+		install -m644 $(MANPAGE_SRC) $(INSTALL_MAN); \
 	else \
 		echo "🔐 Elevated permissions required — using sudo"; \
-		sudo install -Dm644 $(MANPAGE_SRC) $(INSTALL_MAN); \
+		sudo install -d $(MANDIR); \
+		sudo install -m644 $(MANPAGE_SRC) $(INSTALL_MAN); \
 	fi
 	@echo "👉 View it via 'man diffscribe'"
 
+man:
+	@echo "📝 Generating man page..."
+	@go run ./tools/gen-man
+
 ## Symlink every artifact (binary + all completions) back to the repo
-link: build
+link: build man
 	@echo "🔗 Linking binary → $(INSTALL_BIN)"
 	@src="$(CURDIR)/$(BUILD_BIN)"; \
 	if [ -w $(INSTALL_BIN_DIR) ]; then \

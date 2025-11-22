@@ -48,8 +48,38 @@ const (
 )
 
 var rootCmd = &cobra.Command{
-	Use:           "diffscribe [prefix]",
-	Short:         "LLM-assisted git commit helper",
+	Use:   "diffscribe [prefix]",
+	Short: "LLM-assisted git commit helper",
+	Long: `diffscribe inspects your staged Git changes and asks an LLM to craft commit
+messages that match whatever style you describe via --format (Conventional
+Commit summaries by default). Use it directly in the terminal to print
+suggestions, or wire it into shell completion so git commit -m "" followed by
+the Tab key yields AI-generated prefixes that respect whatever you already
+typed.
+
+Environment variables:
+  DIFFSCRIBE_API_KEY / OPENAI_API_KEY  Provide the LLM provider API key.
+  DIFFSCRIBE_STATUS=0                  Hide the "loading…" prompt indicator used by shell integrations.
+  DIFFSCRIBE_STASH_COMMIT              Inspect a temporary stash instead of staged changes (used in completions).
+
+Configuration files are merged in this order, with later entries overriding
+earlier ones for any keys they define:
+  1. $XDG_CONFIG_HOME/diffscribe/.diffscribe*
+  2. $HOME/.diffscribe*
+  3. ./.diffscribe*
+
+Each file only needs to specify the settings it wants to change (for example,
+llm.api_key, llm.provider, llm.model, etc.).
+`,
+	Example: `  # print five suggestions for the staged changes
+  diffscribe
+
+  # constrain results to the provided prefix
+  diffscribe "feat: add"
+
+  # request inline candidates while typing a commit message
+  git commit -m "feat: "  # then press Tab with the completion scripts installed
+`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	Args:          cobra.MaximumNArgs(1),
@@ -72,6 +102,10 @@ var rootCmd = &cobra.Command{
 
 func Execute() error {
 	return rootCmd.Execute()
+}
+
+func RootCommand() *cobra.Command {
+	return rootCmd
 }
 
 func init() {

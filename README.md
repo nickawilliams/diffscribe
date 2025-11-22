@@ -32,7 +32,7 @@ Set `DIFFSCRIBE_STATUS=0` if you want to suppress the in-prompt “loading…”
 
 ### Man page
 
-Run `make install/man` (or `make install/all`) to copy `diffscribe(1)` into your manpath (defaults to `/usr/local/share/man/man1`). Afterwards you can type `man diffscribe` for a concise reference covering flags, environment variables, and config file locations.
+Run `make install/man` (or `make install/all`) to copy `diffscribe(1)` into your manpath (defaults to `/usr/local/share/man/man1`). Afterwards you can type `man diffscribe` for a concise reference covering flags, environment variables, and config file locations. Regenerate the page after CLI changes with `make man`, which uses Cobra's `doc` helpers to emit `contrib/man/diffscribe.1`.
 
 ## Configuration
 
