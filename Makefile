@@ -72,6 +72,17 @@ build: $(SRC)
 	@go build -o $(BUILD_BIN)
 	@echo "✅ Built $(BUILD_BIN)"
 
+## Install Go module and tooling dependencies
+deps:
+	@echo "⬇️ Installing golangci-lint ($(if $(GOLANGCI_LINT_VERSION),$(GOLANGCI_LINT_VERSION),latest))..."
+	@$(GO) install $(GOLANGCI_LINT_PKG)
+	@echo "📦 Downloading Go module dependencies..."
+	@$(GO) mod download
+
+man:
+	@echo "📝 Generating man page..."
+	@go run ./tools/gen-man
+
 ## Remove all build artifacts
 clean:
 	@echo "🧹 Cleaning build artifacts..."
@@ -112,13 +123,6 @@ bench:
 lint:
 	@echo "🧼 Running golangci-lint..."
 	@$(GOLANGCI_LINT_BIN) run
-
-## Install Go module and tooling dependencies
-deps:
-	@echo "⬇️ Installing golangci-lint ($(if $(GOLANGCI_LINT_VERSION),$(GOLANGCI_LINT_VERSION),latest))..."
-	@$(GO) install $(GOLANGCI_LINT_PKG)
-	@echo "📦 Downloading Go module dependencies..."
-	@$(GO) mod download
 
 ## Format all Go files
 format:
@@ -203,10 +207,6 @@ install/man: man
 		sudo install -m644 $(MANPAGE_SRC) $(INSTALL_MAN); \
 	fi
 	@echo "👉 View it via 'man diffscribe'"
-
-man:
-	@echo "📝 Generating man page..."
-	@go run ./tools/gen-man
 
 ## Symlink every artifact (binary + all completions) back to the repo
 link: build man
