@@ -12,6 +12,10 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4
+            - name: Install shells
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y zsh fish
             - name: Cache Go Modules
               uses: actions/cache@v4
               with:
