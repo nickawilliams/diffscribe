@@ -40,5 +40,5 @@ jobs:
               with:
                   name: diffscribe
                   token: ${{ secrets.CODECOV_TOKEN }}
-                  file: ./out/coverage/coverage.out
+                  file: ./.out/coverage/coverage.out
                   fail_ci_if_error: true
