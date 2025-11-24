@@ -4,6 +4,11 @@ SRC := $(shell find . -name '*.go')
 OUT_DIR := .out
 BUILD_BIN := $(OUT_DIR)/build/$(BINARY)
 
+GO ?= go
+GOLANGCI_LINT_BIN := $(shell $(GO) env GOPATH)/bin/golangci-lint
+GOLANGCI_LINT_VERSION ?= $(shell $(GO) list -m -f '{{.Version}}' github.com/golangci/golangci-lint 2>/dev/null)
+GOLANGCI_LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint@$(if $(GOLANGCI_LINT_VERSION),$(GOLANGCI_LINT_VERSION),latest)
+
 PREFIX ?= /usr/local/bin
 PREFIX_ROOT := $(patsubst %/,%,$(dir $(PREFIX)))
 INSTALL_BIN := $(PREFIX)/$(BINARY)
@@ -49,13 +54,13 @@ OMZ_PLUGIN_LIB := $(OMZ_PLUGIN_DIR)/$(ZSH_LIB_NAME)
 
 
 .PHONY: default clean build install install/all install/binary \
-	install/completions/all install/completions/zsh install/completions/zsh/lib \
-	install/completions/bash install/completions/fish install/completions/oh-my-zsh \
-	install/man man link uninstall uninstall/all uninstall/binary uninstall/completions/zsh \
-	uninstall/completions/bash uninstall/completions/fish uninstall/completions/oh-my-zsh \
-	uninstall/man \
-	test test/completions test/completions/bash test/completions/zsh \
-	test/completions/fish bench format help vars _print-var
+		install/completions/all install/completions/zsh install/completions/zsh/lib \
+		install/completions/bash install/completions/fish install/completions/oh-my-zsh \
+		install/man man link uninstall uninstall/all uninstall/binary uninstall/completions/zsh \
+		uninstall/completions/bash uninstall/completions/fish uninstall/completions/oh-my-zsh \
+		uninstall/man \
+		deps test test/completions test/completions/bash test/completions/zsh \
+		test/completions/fish bench lint format help vars _print-var
 
 ## Build all artifacts
 all: build
@@ -102,6 +107,18 @@ test/completions/fish:
 bench:
 	@echo "🏎  Running benchmarks..."
 	@go test ./internal/llm -bench=BenchmarkGenerateCommitMessages -benchmem
+
+## Run golangci-lint
+lint:
+	@echo "🧼 Running golangci-lint..."
+	@$(GOLANGCI_LINT_BIN) run
+
+## Install Go module and tooling dependencies
+deps:
+	@echo "⬇️ Installing golangci-lint ($(if $(GOLANGCI_LINT_VERSION),$(GOLANGCI_LINT_VERSION),latest))..."
+	@$(GO) install $(GOLANGCI_LINT_PKG)
+	@echo "📦 Downloading Go module dependencies..."
+	@$(GO) mod download
 
 ## Format all Go files
 format:
