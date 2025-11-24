@@ -81,9 +81,6 @@ make test/completions  # Bash, Zsh, Fish completion tests
 To rebuild the binary: `make build`. Use `make help` to see all targets.
 
 [ci-image]: https://img.shields.io/github/actions/workflow/status/nickawilliams/diffscribe/ci.yaml?logo=GitHub&logoColor=white
-
-<!-- [ci-image]: https://github.com/nickawilliams/diffscribe/actions/workflows/ci.yaml/badge.svg -->
-
 [ci-url]: https://github.com/nickawilliams/diffscribe/actions/workflows/ci.yaml
 [coverage-image]: https://img.shields.io/codecov/c/github/nickawilliams/diffscribe?logo=codecov&logoColor=white
 [coverage-url]: https://codecov.io/gh/nickawilliams/diffscribe
