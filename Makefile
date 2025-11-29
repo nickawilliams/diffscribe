@@ -8,6 +8,9 @@ GO ?= go
 GOLANGCI_LINT_BIN := $(shell $(GO) env GOPATH)/bin/golangci-lint
 GOLANGCI_LINT_VERSION ?= $(shell $(GO) list -m -f '{{.Version}}' github.com/golangci/golangci-lint 2>/dev/null)
 GOLANGCI_LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint@$(if $(GOLANGCI_LINT_VERSION),$(GOLANGCI_LINT_VERSION),latest)
+GORELEASER_BIN := $(shell $(GO) env GOPATH)/bin/goreleaser
+GORELEASER_VERSION ?= $(shell $(GO) list -m -f '{{.Version}}' github.com/goreleaser/goreleaser/v2 2>/dev/null)
+GORELEASER_PKG := github.com/goreleaser/goreleaser/v2@$(if $(GORELEASER_VERSION),$(GORELEASER_VERSION),latest)
 
 PREFIX ?= /usr/local/bin
 PREFIX_ROOT := $(patsubst %/,%,$(dir $(PREFIX)))
@@ -52,7 +55,6 @@ OMZ_PLUGIN_LIB := $(OMZ_PLUGIN_DIR)/$(ZSH_LIB_NAME)
 # Main Targets
 # ============================================================================
 
-
 .PHONY: default clean build install install/all install/binary \
 		install/completions/all install/completions/zsh install/completions/zsh/lib \
 		install/completions/bash install/completions/fish install/completions/oh-my-zsh \
@@ -76,6 +78,8 @@ build: $(SRC)
 deps:
 	@echo "⬇️ Installing golangci-lint ($(if $(GOLANGCI_LINT_VERSION),$(GOLANGCI_LINT_VERSION),latest))..."
 	@$(GO) install $(GOLANGCI_LINT_PKG)
+	@echo "⬇️ Installing goreleaser ($(if $(GORELEASER_VERSION),$(GORELEASER_VERSION),latest))..."
+	@$(GO) install $(GORELEASER_PKG)
 	@echo "📦 Downloading Go module dependencies..."
 	@$(GO) mod download
 
