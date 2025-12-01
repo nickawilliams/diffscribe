@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/rogwilco/diffscribe/internal/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -47,6 +48,10 @@ const (
 	defaultMaxCompletionTokens = 512
 )
 
+var (
+	versionFlag bool
+)
+
 var rootCmd = &cobra.Command{
 	Use:   "diffscribe [prefix]",
 	Short: "LLM-assisted git commit helper",
@@ -84,6 +89,10 @@ llm.api_key, llm.provider, llm.model, etc.).
 	SilenceErrors: true,
 	Args:          cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if versionFlag {
+			fmt.Printf("diffscribe %s\n", version.String())
+			return nil
+		}
 		ctx, err := collectContext()
 		if err != nil {
 			return err
@@ -112,6 +121,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default searches diffscribe.{yaml,json,toml})")
+	rootCmd.PersistentFlags().BoolVarP(&versionFlag, "version", "v", false, "Show version information and exit")
 	rootCmd.PersistentFlags().String("llm-api-key", "", "LLM provider API key")
 	rootCmd.PersistentFlags().String("llm-provider", defaultProvider, "LLM provider (openai, openrouter, etc.)")
 	rootCmd.PersistentFlags().String("llm-model", defaultModel, "LLM model identifier")
