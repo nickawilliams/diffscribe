@@ -11,6 +11,12 @@ GOLANGCI_LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint@$(if $(
 GORELEASER_BIN := $(shell $(GO) env GOPATH)/bin/goreleaser
 GORELEASER_VERSION ?= $(shell $(GO) list -m -f '{{.Version}}' github.com/goreleaser/goreleaser/v2 2>/dev/null)
 GORELEASER_PKG := github.com/goreleaser/goreleaser/v2@$(if $(GORELEASER_VERSION),$(GORELEASER_VERSION),latest)
+VERSION_PKG := github.com/rogwilco/diffscribe/internal/version
+GIT_TAG := $(shell git describe --tags --abbrev=0 2>/dev/null || echo v0.0.0)
+GIT_SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+EXACT_TAG := $(shell git describe --tags --exact-match 2>/dev/null)
+VERSION ?= $(if $(EXACT_TAG),$(EXACT_TAG),$(GIT_TAG)-dev.$(GIT_SHA))
+LDFLAGS := -s -w -X $(VERSION_PKG).version=$(VERSION)
 
 PREFIX ?= /usr/local/bin
 PREFIX_ROOT := $(patsubst %/,%,$(dir $(PREFIX)))
@@ -55,7 +61,7 @@ OMZ_PLUGIN_LIB := $(OMZ_PLUGIN_DIR)/$(ZSH_LIB_NAME)
 # Main Targets
 # ============================================================================
 
-.PHONY: default clean build install install/all install/binary \
+.PHONY: default clean build dist install install/all install/binary \
 		install/completions/all install/completions/zsh install/completions/zsh/lib \
 		install/completions/bash install/completions/fish install/completions/oh-my-zsh \
 		install/man man link uninstall uninstall/all uninstall/binary uninstall/completions/zsh \
@@ -71,8 +77,16 @@ all: build
 build: $(SRC)
 	@echo "🔨 Building $(BINARY)..."
 	@mkdir -p $(dir $(BUILD_BIN))
-	@go build -o $(BUILD_BIN)
+	@go build -ldflags "$(LDFLAGS)" -o $(BUILD_BIN)
 	@echo "✅ Built $(BUILD_BIN)"
+
+dist:
+	@echo "📦 Building release artifacts via GoReleaser..."
+	@$(GORELEASER_BIN) release --snapshot --clean
+
+release:
+	@echo "📦 Building release artifacts via GoReleaser..."
+	@$(GORELEASER_BIN) release --clean
 
 ## Install Go module and tooling dependencies
 deps:
@@ -128,10 +142,17 @@ lint:
 	@echo "🧼 Running golangci-lint..."
 	@$(GOLANGCI_LINT_BIN) run
 
+## Prepare the codebase for a new commit
+prep: format
+		@echo "🧹 Tidying go.mod/go.sum..."
+		@go mod tidy
+
 ## Format all Go files
 format:
-	@echo "🎨 Formatting Go files..."
-	@gofmt -w $(SRC)
+		@echo "🎨 Formatting Go files..."
+		@gofmt -w $(SRC)
+		@echo "🧬 Regenerating code..."
+		@go generate ./...
 
 ## Install just the binary
 install: install/binary

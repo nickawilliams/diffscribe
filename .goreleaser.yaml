@@ -1,0 +1,78 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 2
+
+project_name: diffscribe
+
+metadata:
+  mod_timestamp: "{{ .CommitTimestamp }}"
+
+dist: ./.out/dist
+
+before:
+  hooks:
+    - make prep
+    - make man
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+      - VERSION={{ .Version }}
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm
+      - arm64
+      - "386"
+    ignore:
+      - goos: windows
+        goarch: arm
+    ldflags:
+      - "-s -w -X github.com/rogwilco/diffscribe/internal/version.version={{ .Env.VERSION }}"
+    flags:
+      - "-trimpath"
+
+archives:
+  - files:
+      - src: "{{ .ArtifactPath }}"
+        dst: "{{ .ProjectName }}"
+      - src: "{{ .ArtifactPath }}.1"
+        dst: "{{ .ProjectName }}.1"
+      - README.md
+      - LICENSE.md
+      - src: contrib/completions/bash/**
+        dst: completions/bash
+      - src: contrib/completions/zsh/**
+        dst: completions/zsh
+      - src: contrib/completions/fish/**
+        dst: completions/fish
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    wrap_in_directory: true
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+release:
+  footer: >-
+
+    ---
+
+    Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
