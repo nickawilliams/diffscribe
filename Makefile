@@ -18,7 +18,7 @@ INSTALL_BIN := $(PREFIX)/$(BINARY)
 MANPREFIX ?= $(PREFIX_ROOT)/share/man
 MANDIR := $(MANPREFIX)/man1
 MANPAGE := diffscribe.1
-MANPAGE_SRC := contrib/man/$(MANPAGE)
+MANPAGE_SRC := $(BUILD_BIN).1
 INSTALL_MAN := $(MANDIR)/$(MANPAGE)
 
 # Completion install locations
@@ -85,7 +85,7 @@ deps:
 
 man:
 	@echo "📝 Generating man page..."
-	@go run ./tools/gen-man
+	@MAN_OUT_DIR=$(dir $(MANPAGE_SRC)) go run ./tools/gen-man
 
 ## Remove all build artifacts
 clean:

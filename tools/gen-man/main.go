@@ -11,7 +11,10 @@ import (
 )
 
 func main() {
-	outDir := filepath.Join("contrib", "man")
+	outDir := os.Getenv("MAN_OUT_DIR")
+	if outDir == "" {
+		outDir = filepath.Join("contrib", "man")
+	}
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		log.Fatalf("unable to create man dir: %v", err)
 	}
