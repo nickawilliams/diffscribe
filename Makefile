@@ -11,6 +11,7 @@ GOLANGCI_LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint@$(if $(
 GORELEASER_BIN := $(shell $(GO) env GOPATH)/bin/goreleaser
 GORELEASER_VERSION ?= $(shell $(GO) list -m -f '{{.Version}}' github.com/goreleaser/goreleaser/v2 2>/dev/null)
 GORELEASER_PKG := github.com/goreleaser/goreleaser/v2@$(if $(GORELEASER_VERSION),$(GORELEASER_VERSION),latest)
+GIT_CLIFF_BIN ?= git-cliff
 VERSION_PKG := github.com/rogwilco/diffscribe/internal/version
 GIT_TAG := $(shell git describe --tags --abbrev=0 2>/dev/null || echo v0.0.0)
 GIT_SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
@@ -61,13 +62,13 @@ OMZ_PLUGIN_LIB := $(OMZ_PLUGIN_DIR)/$(ZSH_LIB_NAME)
 # Main Targets
 # ============================================================================
 
-.PHONY: default clean build dist install install/all install/binary \
+.PHONY: default clean build dist release install install/all install/binary \
 		install/completions/all install/completions/zsh install/completions/zsh/lib \
 		install/completions/bash install/completions/fish install/completions/oh-my-zsh \
 		install/man man link uninstall uninstall/all uninstall/binary uninstall/completions/zsh \
 		uninstall/completions/bash uninstall/completions/fish uninstall/completions/oh-my-zsh \
 		uninstall/man \
-		deps test test/completions test/completions/bash test/completions/zsh \
+		deps changelog test test/completions test/completions/bash test/completions/zsh \
 		test/completions/fish bench lint format help vars _print-var
 
 ## Build all artifacts
@@ -94,12 +95,31 @@ deps:
 	@$(GO) install $(GOLANGCI_LINT_PKG)
 	@echo "⬇️ Installing goreleaser ($(if $(GORELEASER_VERSION),$(GORELEASER_VERSION),latest))..."
 	@$(GO) install $(GORELEASER_PKG)
+	@if ! command -v $(GIT_CLIFF_BIN) >/dev/null 2>&1; then \
+		echo "⬇️ Installing git-cliff (requires cargo)..."; \
+		if command -v cargo >/dev/null 2>&1; then \
+			cargo install git-cliff >/dev/null 2>&1 || { echo "⚠️ Failed to install git-cliff via cargo"; exit 1; }; \
+		else \
+			echo "⚠️ cargo not found — install git-cliff manually from https://github.com/orhun/git-cliff"; \
+		fi; \
+	else \
+		echo "ℹ️ git-cliff already installed ($$(command -v $(GIT_CLIFF_BIN)))"; \
+	fi
 	@echo "📦 Downloading Go module dependencies..."
 	@$(GO) mod download
 
 man:
 	@echo "📝 Generating man page..."
 	@MAN_OUT_DIR=$(dir $(MANPAGE_SRC)) go run ./tools/gen-man
+
+## Generate CHANGELOG.md from conventional commits
+changelog:
+	@if ! command -v $(GIT_CLIFF_BIN) >/dev/null 2>&1; then \
+		echo "❌ git-cliff not found. Run 'make deps' or install git-cliff manually."; \
+		exit 1; \
+	fi
+	@echo "📝 Generating CHANGELOG.md via git-cliff..."
+	@$(GIT_CLIFF_BIN) --config cliff.toml --output CHANGELOG.md
 
 ## Remove all build artifacts
 clean:

@@ -1,0 +1,116 @@
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
+
+[bump]
+# features_always_bump_minor = false
+# breaking_always_bump_major = false
+initial_tag = "v0.0.0"
+# custom_major_increment_regex = ""
+# custom_minor_increment_regex = ""
+# bump_type = "patch"
+
+[changelog]
+header = """
+# Changelog
+
+"""
+body = """
+{%- macro title(current, previous, unreleased, timestamp) -%}
+  {%- set from = previous | default(value="v0.0.0") -%}
+  {%- set to = current | default(value="HEAD") -%}
+  {%- set label = current | default(value=unreleased) -%}
+  [{{ label }}]({{ self::remote_url() }}/compare/{{ from }}...{{ to }}){% if current %} - {{ timestamp | date(format="%Y-%m-%d") }}{% endif %}
+{%- endmacro -%}
+
+{%- macro group(name, commits) -%}
+  ### {{ name }}
+
+  {% for commit in commits | filter(attribute="scope") | sort(attribute="scope") -%}
+    - {{ self::print_commit(commit=commit) }}
+  {% endfor -%}
+  {% for commit in commits -%}
+    {%- if not commit.scope -%}
+      - {{ self::print_commit(commit=commit) }}
+    {% endif -%}
+  {% endfor -%}
+{%- endmacro -%}
+
+{%- macro print_commit(commit) -%}
+  {%- if commit.scope -%}**{{ commit.scope | upper_first }}:** {% endif %}\
+  {{ commit.message | split(pat="\n") | first | trim | upper_first}} - ({{ self::commit_meta(commit=commit) }})
+{%- endmacro -%}
+
+{%- macro commit_meta(commit) -%}
+  {%- if commit.remote.pr_number -%}
+    [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}), 
+  {%- endif -%}
+
+  [{{ commit.id | truncate(length=7, end="") }}]({{ self::remote_url() }}/commit/{{ commit.id }})
+{%- endmacro -%}
+
+{%- macro remote_url() -%}
+  https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
+{%- endmacro -%}
+
+## {{ self::title(current=version, previous=commit_range.from, unreleased="Unreleased", timestamp=timestamp) }}
+
+{% set grouped = commits | group_by(attribute="group") -%}
+{%- set preferred = ["New Features", "Improvements", "Fixes"] -%}
+
+{%- for name in preferred -%}
+  {%- for group, group_commits in grouped -%}
+    {%- if group == name -%}
+      {{ self::group(name=name, commits=group_commits) }}
+    {% endif -%}
+  {% endfor -%}
+{% endfor -%}
+
+{%- for group, group_commits in grouped -%}
+  {%- set_global is_pref = false -%}
+  {%- for name in preferred -%}
+    {%- if name == group -%}
+      {% set_global is_pref = true -%}
+    {% endif -%}
+  {% endfor -%}
+  {%- if is_pref == false -%}
+    {{ self::group(name=group, commits=group_commits) }}
+  {% endif -%}
+{% endfor -%}
+"""
+# footer = ""
+trim = true
+# render_always = true
+# postprocessors = []
+# output = "CHANGELOG.md"
+
+[git]
+# conventional_commits = true
+# filter_unconventional = true
+# require_conventional = true # TODO: enable this
+# split_commits = false
+# commit_preprocessors = []
+commit_parsers = [
+  { message = "^feat", group = "New Features" },
+  { message = "^refactor", group = "Improvements" },
+  { message = "^perf", group = "Improvements" },
+  { message = "^fix", group = "Fixes" },
+]
+protect_breaking_commits = true
+filter_commits = true
+tag_pattern = "^v[0-9].*"
+# skip_tags = ""
+# ignore_tags = ""
+# count_tags = ""
+# topo_order = false
+# topo_order_commits = true
+# sort_commits = "oldest"
+# link_parsers = []
+# limit_commits = 0
+# recurse_submodules = false
+# include_paths = []
+# exclude_paths = []
+# use_branch_tags = false
+
+# [remote.github]
+# owner = "nickawilliams"
+# repo = "diffscribe"
