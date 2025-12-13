@@ -1,0 +1,6 @@
+{
+  "desc": "Ask an LLM to craft helpful Conventional Commit messages for your staged Git changes.",
+  "homepage": "https://github.com/nickawilliams/diffscribe",
+  "license": "BSD-3-Clause",
+  "binary": "diffscribe"
+}

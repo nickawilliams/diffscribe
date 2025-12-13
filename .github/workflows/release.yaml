@@ -96,7 +96,7 @@ jobs:
           git_user_signingkey: true
           git_commit_gpgsign: true
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-      - name: Configure Git Signing
+      - name: Configure Git
         run: |
           git config commit.gpgsign true
           git config tag.gpgsign true
@@ -176,3 +176,11 @@ jobs:
         run: make deps
       - name: Release
         run: make release
+
+  publish:
+    needs: [tag, release]
+    if: ${{ needs.tag.outputs.release_version != '' }}
+    uses: ./.github/workflows/publish.yaml
+    with:
+      release_tag: ${{ needs.tag.outputs.release_version }}
+    secrets: inherit

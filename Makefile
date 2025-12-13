@@ -2,6 +2,10 @@ SHELL := /usr/bin/env bash
 
 BINARY := diffscribe
 SRC := $(shell find . -name '*.go')
+TAP_REPO ?= nickawilliams/homebrew-tap
+TAP_BRANCH ?= main
+TAP_FORMULA_PATH := Formula/diffscribe.rb
+TAP_FORMULA := packaging/homebrew/diffscribe.rb
 
 OUT_DIR := .out
 BUILD_BIN := $(OUT_DIR)/build/$(BINARY)
@@ -77,7 +81,7 @@ OMZ_PLUGIN_LIB := $(OMZ_PLUGIN_DIR)/$(ZSH_LIB_NAME)
 		uninstall/completions/bash uninstall/completions/fish uninstall/completions/oh-my-zsh \
 		uninstall/man \
 		deps changelog releasenotes version version/bump_type version/github_actions release/commit release/tag test test/completions test/completions/bash test/completions/zsh \
-		test/completions/fish bench lint format help vars _print-var
+		test/completions/fish bench lint format help vars _print-var publish/homebrew
 
 ## Build all artifacts
 all: build
@@ -100,6 +104,10 @@ release:
 	@notes="$$($(MAKE) --no-print-directory releasenotes)"; \
 	GIT_CLIFF_RELEASE_NOTES="$$notes" \
 		$(GORELEASER) release --clean
+
+## Render and publish the Homebrew formula to the tap repository
+publish/homebrew:
+	@./scripts/publish_homebrew.sh "$(TAG)" "$(TAP_REPO)" "$(TAP_BRANCH)" "$(TAP_FORMULA_PATH)" "$(TAP_FORMULA)"
 
 ## Install Go module and tooling dependencies
 deps:

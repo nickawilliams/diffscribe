@@ -39,13 +39,10 @@ builds:
 
 archives:
   - files:
-      - src: "{{ .ArtifactPath }}"
-        dst: "{{ .ProjectName }}"
       - README.md
       - LICENSE.md
       - CHANGELOG.md
-      - src: "contrib/man/{{ .ProjectName }}.1"
-        dst: "{{ .ProjectName }}.1"
+      - contrib/man/diffscribe.1
       - src: contrib/completions/bash/**
         dst: completions/bash
       - src: contrib/completions/zsh/**

@@ -1,6 +1,9 @@
 name: Publish
 
 on:
+  release:
+    types: [published]
+
   workflow_call:
     inputs:
       release_tag:
@@ -15,16 +18,48 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
-  build:
+  homebrew:
     runs-on: ubuntu-latest
+    env:
+      TAP_REPO: nickawilliams/homebrew-tap
+      TAP_BRANCH: main
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: refs/tags/${{ inputs.release_tag }}
-      - name: Validate Tag
-        run: gh release view "${{ inputs.release_tag }}"
-      - name: Download Release Assets
-        run: gh release download "${{ inputs.release_tag }}"
+      - name: Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gettext jq
+      - name: Resolve Tag
+        id: release
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ inputs.release_tag }}" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Import GPG
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+      - name: Configure Git
+        run: |
+          git config --global commit.gpgsign true
+          git config --global tag.gpgsign true
+          git config --global user.signingkey "${{ steps.import_gpg.outputs.keyid }}"
+          git config --global user.name "${{ vars.GIT_USER_NAME }}"
+          git config --global user.email "${{ vars.GIT_USER_EMAIL }}"
+      - name: Publish
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: make publish/homebrew
