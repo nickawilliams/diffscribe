@@ -3,16 +3,362 @@
 
 [[ -z ${ZSH_VERSION-} ]] && return 0
 
-_diffscribe_git_dir=${${(%):-%N}:h}
-_diffscribe_git_lib="${_diffscribe_git_dir}/diffscribe.lib.zsh"
-if [[ ! -r $_diffscribe_git_lib ]]; then
-	_diffscribe_git_lib="${_diffscribe_git_dir}/../diffscribe.lib.zsh"
+if [[ -n ${_DIFFSCRIBE_ZSH_LIB_LOADED-} ]]; then
+  if [[ -o interactive ]]; then
+    diffscribe_wrap_git_completion
+  fi
+  return 0
 fi
-if [[ ! -r $_diffscribe_git_lib ]]; then
-	print -ru2 -- "diffscribe: missing diffscribe.lib.zsh"
-	return 0
-fi
+typeset -g _DIFFSCRIBE_ZSH_LIB_LOADED=1
+typeset -ga _diffscribe_stash_args=()
+typeset -g _diffscribe_git_orig_handler=""
+typeset -g _diffscribe_git_hook_registered=0
+typeset -g _diffscribe_status_mode=""
+typeset -g _diffscribe_status_text="reticulating splines…"
+typeset -g _diffscribe_status_text_stderr=$'\033[90m'${_diffscribe_status_text}$'\033[0m'
 
-source "$_diffscribe_git_lib"
-diffscribe_wrap_git_completion
-unset _diffscribe_git_dir _diffscribe_git_lib
+_diffscribe_status_enabled() {
+  [[ ${DIFFSCRIBE_STATUS:-1} != 0 ]]
+}
+
+_diffscribe_set_status() {
+  _diffscribe_status_enabled || return 1
+  local msg=${_diffscribe_status_text}
+  if zle -R -- "$msg" 2>/dev/null; then
+    _diffscribe_status_mode="zle"
+    return 0
+  fi
+
+  print -rn -u2 -- $'\r'"${_diffscribe_status_text_stderr:-$_diffscribe_status_text}"
+  _diffscribe_status_mode="stderr"
+  return 0
+}
+
+_diffscribe_register_git_hook() {
+  (( !_diffscribe_git_hook_registered )) || return 0
+  autoload -Uz add-zsh-hook 2>/dev/null
+  if type add-zsh-hook >/dev/null 2>&1; then
+    if add-zsh-hook precmd diffscribe_wrap_git_completion 2>/dev/null; then
+      _diffscribe_git_hook_registered=1
+    fi
+  fi
+}
+
+_diffscribe_git_wrapper() {
+  if _diffscribe_complete_commit_message "$@"; then
+    return 0
+  fi
+
+  if [[ -n ${_diffscribe_git_orig_handler-} ]]; then
+    "${_diffscribe_git_orig_handler}" "$@"
+  else
+    return 1
+  fi
+}
+
+_diffscribe_log() {
+  [[ -z ${DIFFSCRIBE_DEBUG-} ]] && return
+  print -ru2 -- "[diffscribe] $*"
+}
+
+_diffscribe_clean_prefix() {
+  local clean=$1
+  clean=${clean#\'}
+  clean=${clean#\"}
+  clean=${clean%\'}
+  clean=${clean%\"}
+  printf '%s' "$clean"
+}
+
+_diffscribe_detect_flag_prefix() {
+  local cur prev prevprev prefix="" intercept=0
+  cur=${words[CURRENT]}
+  if (( CURRENT > 1 )); then
+    prev=${words[CURRENT-1]}
+  fi
+  if (( CURRENT > 2 )); then
+    prevprev=${words[CURRENT-2]}
+  fi
+
+  if [[ -z $cur && -n ${prev-} && ( $prevprev == "-m" || $prevprev == "--message" ) ]]; then
+    cur=$prev
+    prev=$prevprev
+  fi
+
+  if [[ $prev == "-m" || $prev == "--message" ]]; then
+    prefix=$cur
+    intercept=1
+  elif [[ $cur == --message=* ]]; then
+    prefix=${cur#--message=}
+    intercept=1
+  elif [[ $cur == -m* && $cur != "-m" ]]; then
+    prefix=${cur#-m}
+    intercept=1
+  fi
+
+  (( intercept )) || return 1
+  printf '%s' "$prefix"
+  return 0
+}
+
+_diffscribe_detect_stash_push_prefix() {
+  _diffscribe_stash_args=()
+  local cur=${words[CURRENT]}
+  local prev="" prevprev=""
+  if (( CURRENT > 1 )); then
+    prev=${words[CURRENT-1]}
+  fi
+  if (( CURRENT > 2 )); then
+    prevprev=${words[CURRENT-2]}
+  fi
+
+  if [[ -z $cur && -n ${prev-} && ( $prevprev == "-m" || $prevprev == "--message" ) ]]; then
+    cur=$prev
+    prev=$prevprev
+  fi
+
+  local prefix="" intercept=0
+  if [[ $prev == "-m" || $prev == "--message" ]]; then
+    prefix=$cur
+    intercept=1
+  elif [[ $cur == --message=* ]]; then
+    prefix=${cur#--message=}
+    intercept=1
+  elif [[ $cur == -m* && $cur != "-m" ]]; then
+    prefix=${cur#-m}
+    intercept=1
+  fi
+
+  (( intercept )) || return 1
+
+  local stash_idx=0 push_idx=0 token
+  for ((i = 1; i < CURRENT; i++)); do
+    token=${words[i]}
+    if (( ! stash_idx )) && [[ $token == stash ]]; then
+      stash_idx=$i
+      continue
+    fi
+    if (( stash_idx && ! push_idx )) && [[ $token == push ]]; then
+      push_idx=$i
+      continue
+    fi
+  done
+
+  (( stash_idx && push_idx && push_idx < CURRENT )) || return 1
+
+  for ((i = stash_idx + 1; i < push_idx; i++)); do
+    _diffscribe_stash_args+=("${words[i]}")
+  done
+
+  local skip_next=0 after_dd=0
+  for ((i = push_idx + 1; i <= ${#words}; i++)); do
+    token=${words[i]}
+    if (( skip_next )); then
+      skip_next=0
+      continue
+    fi
+
+    case $token in
+      -m|--message)
+        skip_next=1
+        continue
+        ;;
+      --message=*)
+        continue
+        ;;
+      -m*)
+        continue
+        ;;
+    esac
+
+    if [[ $token == -- ]]; then
+      after_dd=1
+      _diffscribe_stash_args+=("$token")
+      continue
+    fi
+
+    if (( after_dd )); then
+      _diffscribe_stash_args+=("$token")
+      continue
+    fi
+
+    if [[ $token == push ]]; then
+      continue
+    fi
+
+    _diffscribe_stash_args+=("$token")
+  done
+
+  printf '%s' "$prefix"
+  return 0
+}
+
+_diffscribe_detect_stash_save_prefix() {
+  _diffscribe_stash_args=()
+  local stash_idx=0 save_idx=0 token
+  local skip_next=0
+  for ((i = 1; i < CURRENT; i++)); do
+    token=${words[i]}
+    if (( skip_next )); then
+      skip_next=0
+      continue
+    fi
+    if (( ! stash_idx )) && [[ $token == stash ]]; then
+      stash_idx=$i
+      continue
+    fi
+
+    if (( stash_idx && ! save_idx )) && [[ $token == save ]]; then
+      save_idx=$i
+      continue
+    fi
+
+    if (( save_idx )); then
+      case $token in
+        -m|--message)
+          skip_next=1
+          continue
+          ;;
+        --message=*)
+          continue
+          ;;
+      esac
+      if [[ $token == -* ]]; then
+        _diffscribe_stash_args+=("$token")
+        continue
+      fi
+      if (( i == CURRENT - 1 )) && [[ -z ${words[CURRENT]-} ]]; then
+        continue
+      fi
+      return 1
+    fi
+  done
+
+  (( stash_idx && save_idx && save_idx < CURRENT )) || return 1
+
+  local cur=${words[CURRENT]}
+  if [[ -z $cur ]] && (( CURRENT > 1 )); then
+    local prev_word=${words[CURRENT-1]}
+    if [[ $prev_word != -* || $prev_word == '-' ]]; then
+      cur=$prev_word
+    fi
+  fi
+  if [[ $cur == -* && $cur != "-" ]]; then
+    return 1
+  fi
+
+  printf '%s' "$cur"
+  return 0
+}
+
+_diffscribe_run_diffscribe() {
+  local prefix=$1 mode=$2 raw=""
+
+  local qty=${DIFFSCRIBE_QUANTITY:-5}
+  local diffscribe_cmd=(command diffscribe --quantity "$qty")
+  if [[ $mode == stash ]]; then
+    local oid
+    oid=$(command git stash create "${_diffscribe_stash_args[@]}" 2>/dev/null)
+    if [[ -z $oid ]]; then
+      _diffscribe_log "git stash create failed"
+      return 1
+    fi
+    raw=$(DIFFSCRIBE_STASH_COMMIT=$oid ${diffscribe_cmd[@]} "$prefix" 2>/dev/null)
+  else
+    raw=$(${diffscribe_cmd[@]} "$prefix" 2>/dev/null)
+  fi
+
+  printf '%s' "$raw"
+  return 0
+}
+
+_diffscribe_complete_commit_message() {
+  local prefix="" mode=""
+  if prefix=$(_diffscribe_detect_stash_push_prefix 2>/dev/null); then
+    mode="stash"
+  elif prefix=$(_diffscribe_detect_stash_save_prefix 2>/dev/null); then
+    mode="stash"
+  elif prefix=$(_diffscribe_detect_flag_prefix 2>/dev/null); then
+    mode="commit"
+  else
+    return 1
+  fi
+
+  local clean
+  clean=$(_diffscribe_clean_prefix "$prefix")
+  _diffscribe_log "prefix='$prefix' clean='$clean' mode=$mode"
+
+  if ! command -v diffscribe >/dev/null 2>&1; then
+    _diffscribe_log "diffscribe not in PATH"
+    return 1
+  fi
+
+  local raw status_active=0
+  if _diffscribe_status_enabled && _diffscribe_set_status; then
+    status_active=1
+  fi
+
+  raw=$(_diffscribe_run_diffscribe "$clean" "$mode")
+  local rc=$?
+  if (( status_active )); then
+    if [[ $_diffscribe_status_mode == stderr ]]; then
+      print -rn -u2 -- $'\r\033[K'
+    fi
+    if (( rc != 0 )); then
+      print -ru2 -- "[diffscribe] completion failed"
+    fi
+  fi
+  _diffscribe_log "diffscribe rc=$rc"
+  [[ -n $raw ]] || return 1
+
+  local -a cands
+  cands=(${(@f)raw})
+  (( ${#cands} )) || return 1
+
+  compadd -S "" -- "${cands[@]}"
+  local comp_status=$?
+  _diffscribe_log "compadd status=$comp_status count=${#cands}"
+
+  if (( comp_status == 0 )); then
+    compstate[list]='list'
+    compstate[insert]='menu'
+  fi
+
+  return $comp_status
+}
+
+diffscribe_wrap_git_completion() {
+  (( $+functions[_git] )) || autoload -Uz _git 2>/dev/null
+  if ! typeset -f _git >/dev/null; then
+    _diffscribe_log "_git unavailable"
+    return 1
+  fi
+
+  local current_handler="${_comps[git]-}"
+  if [[ -z $current_handler ]]; then
+    current_handler=_git
+  fi
+
+  if [[ $current_handler == _diffscribe_git_wrapper ]]; then
+    if [[ -z ${_diffscribe_git_orig_handler-} ]]; then
+      _diffscribe_git_orig_handler=_git
+    fi
+    _diffscribe_register_git_hook
+    _diffscribe_log "git completion already wrapped"
+    return 0
+  fi
+
+  _diffscribe_git_orig_handler=$current_handler
+
+  if type compdef >/dev/null 2>&1; then
+    compdef _diffscribe_git_wrapper git >/dev/null 2>&1
+  fi
+
+  _diffscribe_register_git_hook
+
+  return 0
+}
+
+if [[ -o interactive ]]; then
+  diffscribe_wrap_git_completion
+fi

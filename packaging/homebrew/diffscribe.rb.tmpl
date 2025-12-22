@@ -78,18 +78,13 @@ class Diffscribe < Formula
     if completions_root
       bash_completion_path = completions_root/"bash"/"#{binary_name}.bash"
       zsh_completion_path = completions_root/"zsh"/"#{binary_name}.zsh"
-      zsh_lib_path = completions_root/"zsh"/"#{binary_name}.lib.zsh"
-      zsh_plugin_path = completions_root/"zsh"/"#{binary_name}.plugin.zsh"
       fish_completion_path = completions_root/"fish"/"#{binary_name}.fish"
 
       bash_completion.install bash_completion_path => binary_name if bash_completion_path.exist?
-      zsh_completion.install zsh_completion_path => "_#{binary_name}" if zsh_completion_path.exist?
-      zsh_completion.install zsh_lib_path if zsh_lib_path.exist?
       fish_completion.install fish_completion_path if fish_completion_path.exist?
 
-      if zsh_plugin_path.exist?
-        (pkgshare/"oh-my-zsh"/binary_name).install zsh_plugin_path
-        (pkgshare/"oh-my-zsh"/binary_name).install zsh_lib_path if zsh_lib_path.exist?
+      if zsh_completion_path.exist?
+        (pkgshare/"oh-my-zsh"/binary_name).install zsh_completion_path => "#{binary_name}.plugin.zsh"
       end
     end
 

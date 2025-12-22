@@ -32,7 +32,7 @@ chmod +x "$tmp_dir/git"
 
 export PATH="$tmp_dir:$PATH"
 
-source "$repo_root/contrib/completions/zsh/diffscribe.lib.zsh"
+source "$repo_root/contrib/completions/zsh/diffscribe.zsh"
 
 typeset -Ag compstate
 typeset -Ag _comps

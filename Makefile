@@ -46,36 +46,31 @@ BASH_DIR := $(HOME)/.bash_completion.d
 FISH_DIR := $(HOME)/.config/fish/completions
 
 ZSH_SCRIPT_NAME := diffscribe.zsh
-ZSH_LIB_NAME := diffscribe.lib.zsh
 BASH_SCRIPT_NAME := diffscribe.bash
 FISH_SCRIPT_NAME := diffscribe.fish
 
 ZSH_SCRIPT_SRC := contrib/completions/zsh/$(ZSH_SCRIPT_NAME)
-ZSH_LIB_SRC := contrib/completions/zsh/$(ZSH_LIB_NAME)
 BASH_SCRIPT_SRC := contrib/completions/bash/$(BASH_SCRIPT_NAME)
 FISH_SCRIPT_SRC := contrib/completions/fish/$(FISH_SCRIPT_NAME)
 
 INSTALL_ZSH := $(ZSH_DIR)/$(ZSH_SCRIPT_NAME)
-INSTALL_ZSH_LIB := $(ZSH_DIR)/$(ZSH_LIB_NAME)
 INSTALL_BASH := $(BASH_DIR)/$(BASH_SCRIPT_NAME)
 INSTALL_FISH := $(FISH_DIR)/$(FISH_SCRIPT_NAME)
 
 INSTALL_BIN_DIR := $(dir $(INSTALL_BIN))
 INSTALL_ZSH_DIR := $(dir $(INSTALL_ZSH))
-INSTALL_ZSH_LIB_DIR := $(dir $(INSTALL_ZSH_LIB))
 INSTALL_BASH_DIR := $(dir $(INSTALL_BASH))
 INSTALL_FISH_DIR := $(dir $(INSTALL_FISH))
 OMZ_CUSTOM ?= $(HOME)/.oh-my-zsh/custom
 OMZ_PLUGIN_DIR := $(OMZ_CUSTOM)/plugins/diffscribe
-OMZ_PLUGIN_SRC := contrib/completions/zsh/diffscribe.plugin.zsh
+OMZ_PLUGIN_SRC := $(ZSH_SCRIPT_SRC)
 OMZ_PLUGIN_DEST := $(OMZ_PLUGIN_DIR)/diffscribe.plugin.zsh
-OMZ_PLUGIN_LIB := $(OMZ_PLUGIN_DIR)/$(ZSH_LIB_NAME)
 
 # Main Targets
 # ============================================================================
 
 .PHONY: default clean build dist release install install/all install/binary \
-		install/completions/all install/completions/zsh install/completions/zsh/lib \
+		install/completions/all install/completions/zsh \
 		install/completions/bash install/completions/fish install/completions/oh-my-zsh \
 		install/man man link uninstall uninstall/all uninstall/binary uninstall/completions/zsh \
 		uninstall/completions/bash uninstall/completions/fish uninstall/completions/oh-my-zsh \
@@ -309,7 +304,7 @@ install/binary: build
 
 install/completions/all: install/completions/zsh install/completions/bash install/completions/fish install/completions/oh-my-zsh
 
-install/completions/zsh: install/completions/zsh/lib
+install/completions/zsh:
 	@echo "📦 Installing Zsh completion assets into $(ZSH_DIR)"
 	@mkdir -p $(ZSH_DIR)
 	@if [ -f $(ZSH_SCRIPT_SRC) ]; then \
@@ -318,15 +313,6 @@ install/completions/zsh: install/completions/zsh/lib
 		echo "⚠️  Missing $(ZSH_SCRIPT_SRC); skipping diffscribe.zsh"; \
 	fi
 	@echo "👉 Source $$HOME/.zsh/$(ZSH_SCRIPT_NAME) from ~/.zshrc"
-
-install/completions/zsh/lib:
-	@echo "📦 Installing Zsh shared helpers → $(INSTALL_ZSH_LIB)"
-	@mkdir -p $(ZSH_DIR)
-	@if [ -f $(ZSH_LIB_SRC) ]; then \
-		install -m644 $(ZSH_LIB_SRC) $(INSTALL_ZSH_LIB); \
-	else \
-		echo "⚠️  Missing $(ZSH_LIB_SRC); skipping shared helpers"; \
-	fi
 
 install/completions/bash:
 	@echo "📦 Installing Bash completion → $(INSTALL_BASH)"
@@ -348,12 +334,11 @@ install/completions/fish:
 	fi
 	@echo "👉 Fish auto-loads $$HOME/.config/fish/completions/$(FISH_SCRIPT_NAME)"
 
-install/completions/oh-my-zsh: install/completions/zsh/lib
+install/completions/oh-my-zsh:
 	@if [ -f $(OMZ_PLUGIN_SRC) ]; then \
 		echo "📦 Installing Oh-My-Zsh plugin → $(OMZ_PLUGIN_DEST)"; \
 		mkdir -p $(OMZ_PLUGIN_DIR); \
 		install -m644 $(OMZ_PLUGIN_SRC) $(OMZ_PLUGIN_DEST); \
-		install -m644 $(ZSH_LIB_SRC) $(OMZ_PLUGIN_LIB); \
 	else \
 		echo "⚠️  Missing $(OMZ_PLUGIN_SRC); skipping Oh-My-Zsh plugin"; \
 	fi
@@ -382,9 +367,6 @@ link: build man
 		sudo install -d $(INSTALL_BIN_DIR); \
 		sudo ln -sfn "$$src" $(INSTALL_BIN); \
 	fi
-	@echo "🔗 Linking Zsh shared helpers → $(INSTALL_ZSH_LIB)"
-	@install -d $(INSTALL_ZSH_LIB_DIR)
-	@ln -sfn "$(CURDIR)/$(ZSH_LIB_SRC)" $(INSTALL_ZSH_LIB)
 	@echo "🔗 Linking Zsh completion → $(INSTALL_ZSH)"
 	@install -d $(INSTALL_ZSH_DIR)
 	@ln -sfn "$(CURDIR)/$(ZSH_SCRIPT_SRC)" $(INSTALL_ZSH)
@@ -396,8 +378,7 @@ link: build man
 	@ln -sfn "$(CURDIR)/$(FISH_SCRIPT_SRC)" $(INSTALL_FISH)
 	@echo "🔗 Linking Oh-My-Zsh plugin → $(OMZ_PLUGIN_DEST)"
 	@install -d $(OMZ_PLUGIN_DIR)
-	@ln -sfn "$(CURDIR)/$(OMZ_PLUGIN_SRC)" $(OMZ_PLUGIN_DEST)
-	@ln -sfn "$(CURDIR)/$(ZSH_LIB_SRC)" $(OMZ_PLUGIN_LIB)
+	@ln -sfn "$(CURDIR)/$(ZSH_SCRIPT_SRC)" $(OMZ_PLUGIN_DEST)
 	@echo "🔗 Linking man page → $(INSTALL_MAN)"
 	@mandir=$(MANDIR); \
 	if [ -w "$$mandir" ]; then \
@@ -432,12 +413,6 @@ uninstall/completions/zsh:
 		echo "🔐 Elevated permissions required — using sudo"; \
 		sudo rm -f $(INSTALL_ZSH); \
 	fi
-	@if [ -w $(INSTALL_ZSH_LIB_DIR) ]; then \
-		rm -f $(INSTALL_ZSH_LIB); \
-	else \
-		echo "🔐 Elevated permissions required — using sudo"; \
-		sudo rm -f $(INSTALL_ZSH_LIB); \
-	fi
 
 uninstall/completions/bash:
 	@echo "🗑️  Removing Bash completion"
@@ -460,10 +435,10 @@ uninstall/completions/fish:
 uninstall/completions/oh-my-zsh:
 	@echo "🗑️  Removing Oh-My-Zsh plugin"
 	@if [ -w $(OMZ_PLUGIN_DIR) ]; then \
-		rm -f $(OMZ_PLUGIN_DEST) $(OMZ_PLUGIN_LIB); \
+		rm -f $(OMZ_PLUGIN_DEST); \
 	else \
 		echo "🔐 Elevated permissions required — using sudo"; \
-		sudo rm -f $(OMZ_PLUGIN_DEST) $(OMZ_PLUGIN_LIB); \
+		sudo rm -f $(OMZ_PLUGIN_DEST); \
 	fi
 
 uninstall/man:

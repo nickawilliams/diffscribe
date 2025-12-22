@@ -43,11 +43,11 @@ archives:
       - LICENSE.md
       - CHANGELOG.md
       - contrib/man/diffscribe.1
-      - src: contrib/completions/bash/**
+      - src: contrib/completions/bash/diffscribe.bash
         dst: completions/bash
-      - src: contrib/completions/zsh/**
+      - src: contrib/completions/zsh/diffscribe.zsh
         dst: completions/zsh
-      - src: contrib/completions/fish/**
+      - src: contrib/completions/fish/diffscribe.fish
         dst: completions/fish
     formats: [tar.gz]
     format_overrides:
