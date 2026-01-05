@@ -42,6 +42,14 @@ class Diffscribe < Formula
         bin.install buildpath/binary_name
         install_shared_assets(Pathname.pwd)
       end
+
+      unless (bash_completion/binary_name).exist? &&
+             (fish_completion/"#{binary_name}.fish").exist? &&
+             (pkgshare/"zsh"/"#{binary_name}.zsh").exist? &&
+             (pkgshare/"oh-my-zsh"/binary_name/"#{binary_name}.plugin.zsh").exist? &&
+             (man1/"#{binary_name}.1").exist?
+        odie "Source archive for #{binary_name} #{version} is missing expected shared assets (completions/manpage). Rebuild the release artifacts and republish the Homebrew formula."
+      end
     else
       install_prebuilt_payload
     end
@@ -66,6 +74,14 @@ class Diffscribe < Formula
 
     bin.install payload_root/binary_name
     install_shared_assets(payload_root)
+
+    unless (bash_completion/binary_name).exist? &&
+           (fish_completion/"#{binary_name}.fish").exist? &&
+           (pkgshare/"zsh"/"#{binary_name}.zsh").exist? &&
+           (pkgshare/"oh-my-zsh"/binary_name/"#{binary_name}.plugin.zsh").exist? &&
+           (man1/"#{binary_name}.1").exist?
+      odie "Release archive for #{binary_name} #{version} is missing expected shared assets (completions/manpage). Rebuild the release artifacts and republish the Homebrew formula."
+    end
   end
 
   def install_shared_assets(root)
@@ -84,7 +100,12 @@ class Diffscribe < Formula
       fish_completion.install fish_completion_path if fish_completion_path.exist?
 
       if zsh_completion_path.exist?
-        (pkgshare/"oh-my-zsh"/binary_name).install zsh_completion_path => "#{binary_name}.plugin.zsh"
+        (pkgshare/"zsh").install zsh_completion_path => "#{binary_name}.zsh"
+        omz_dir = pkgshare/"oh-my-zsh"/binary_name
+        omz_dir.mkpath
+        (omz_dir/"#{binary_name}.plugin.zsh").write <<~EOS
+          source "#{pkgshare}/zsh/#{binary_name}.zsh"
+        EOS
       end
     end
 
@@ -93,13 +114,33 @@ class Diffscribe < Formula
   end
 
   def caveats
-    return unless build_from_source?
+    out = <<~EOS
+      Bash completion:
+        #{bash_completion}/#{binary_name}
 
-    <<~EOS
-      `brew install #{full_name}` uses the published macOS binaries.
-      You passed --build-from-source, so Homebrew rebuilt #{binary_name} locally.
-      Ensure Go 1.21+ stays available if you repeat that workflow.
+      Fish completion:
+        #{fish_completion}/#{binary_name}.fish
+
+      Zsh git completion hook:
+        #{pkgshare}/zsh/#{binary_name}.zsh
+
+      To enable in zsh, add this to your ~/.zshrc (after compinit and git completion):
+        source #{pkgshare}/zsh/#{binary_name}.zsh
+
+      Oh-My-Zsh plugin:
+        #{pkgshare}/oh-my-zsh/#{binary_name}/#{binary_name}.plugin.zsh
     EOS
+
+    if build_from_source?
+      out += <<~EOS
+
+        `brew install #{full_name}` uses the published macOS binaries.
+        You passed --build-from-source, so Homebrew rebuilt #{binary_name} locally.
+        Ensure Go 1.21+ stays available if you repeat that workflow.
+      EOS
+    end
+
+    out
   end
 
   def binary_name
@@ -108,5 +149,10 @@ class Diffscribe < Formula
 
   test do
     assert_match version.to_s, shell_output("#{bin}/#{binary_name} --version")
+    assert_predicate bash_completion/binary_name, :exist?
+    assert_predicate fish_completion/"#{binary_name}.fish", :exist?
+    assert_predicate pkgshare/"zsh"/"#{binary_name}.zsh", :exist?
+    assert_predicate pkgshare/"oh-my-zsh"/binary_name/"#{binary_name}.plugin.zsh", :exist?
+    assert_match "source \"#{pkgshare}/zsh/#{binary_name}.zsh\"", (pkgshare/"oh-my-zsh"/binary_name/"#{binary_name}.plugin.zsh").read
   end
 end

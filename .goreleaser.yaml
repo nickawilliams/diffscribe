@@ -44,11 +44,11 @@ archives:
       - CHANGELOG.md
       - contrib/man/diffscribe.1
       - src: contrib/completions/bash/diffscribe.bash
-        dst: completions/bash
+        dst: completions/bash/diffscribe.bash
       - src: contrib/completions/zsh/diffscribe.zsh
-        dst: completions/zsh
+        dst: completions/zsh/diffscribe.zsh
       - src: contrib/completions/fish/diffscribe.fish
-        dst: completions/fish
+        dst: completions/fish/diffscribe.fish
     formats: [tar.gz]
     format_overrides:
       - goos: windows
