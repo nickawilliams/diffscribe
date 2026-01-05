@@ -83,19 +83,19 @@ all: build
 
 ## Build the executable
 build: $(SRC)
-	@echo "🔨 Building $(BINARY)..."
+	@echo "Building $(BINARY)..."
 	@mkdir -p $(dir $(BUILD_BIN))
 	@go build -ldflags "$(LDFLAGS)" -o $(BUILD_BIN)
-	@echo "✅ Built $(BUILD_BIN)"
+	@echo "Built $(BUILD_BIN)"
 
 dist:
-	@echo "📦 Building release artifacts via GoReleaser..."
+	@echo "Building release artifacts via GoReleaser..."
 	@notes="$$($(MAKE) --no-print-directory releasenotes)"; \
 	GIT_CLIFF_RELEASE_NOTES="$$notes" \
 		$(GORELEASER) release --snapshot --clean
 
 release:
-	@echo "📦 Building release artifacts via GoReleaser..."
+	@echo "Building release artifacts via GoReleaser..."
 	@notes="$$($(MAKE) --no-print-directory releasenotes)"; \
 	GIT_CLIFF_RELEASE_NOTES="$$notes" \
 		$(GORELEASER) release --clean
@@ -107,41 +107,41 @@ publish/homebrew:
 ## Install Go module and tooling dependencies
 deps:
 	@if ! command -v $(GOLANGCI_LINT) >/dev/null 2>&1; then \
-		echo "⬇️ Installing golangci-lint ($(if $(GOLANGCI_LINT_VERSION),$(GOLANGCI_LINT_VERSION),latest))..."; \
+		echo "Installing golangci-lint ($(if $(GOLANGCI_LINT_VERSION),$(GOLANGCI_LINT_VERSION),latest))..."; \
 		$(GO) install $(GOLANGCI_LINT_PKG); \
 	else \
-		echo "ℹ️ golangci-lint already installed ($$(command -v $(GOLANGCI_LINT)))"; \
+		echo "INFO: golangci-lint already installed ($$(command -v $(GOLANGCI_LINT)))"; \
 	fi
 	@if ! command -v $(GORELEASER) >/dev/null 2>&1; then \
-		echo "⬇️ Installing goreleaser ($(if $(GORELEASER_VERSION),$(GORELEASER_VERSION),latest))..."; \
+		echo "Installing goreleaser ($(if $(GORELEASER_VERSION),$(GORELEASER_VERSION),latest))..."; \
 		$(GO) install $(GORELEASER_PKG); \
 	else \
-		echo "ℹ️ goreleaser already installed ($$(command -v $(GORELEASER)))"; \
+		echo "INFO: goreleaser already installed ($$(command -v $(GORELEASER)))"; \
 	fi
 	@if ! command -v $(GIT_CLIFF) >/dev/null 2>&1; then \
-		echo "⬇️ Installing git-cliff (requires cargo)..."; \
+		echo "Installing git-cliff (requires cargo)..."; \
 		if command -v cargo >/dev/null 2>&1; then \
-			cargo install git-cliff >/dev/null 2>&1 || { echo "⚠️ Failed to install git-cliff via cargo"; exit 1; }; \
+			cargo install git-cliff >/dev/null 2>&1 || { echo "WARN: Failed to install git-cliff via cargo"; exit 1; }; \
 		else \
-			echo "⚠️ cargo not found — install git-cliff manually from https://github.com/orhun/git-cliff"; \
+			echo "WARN: cargo not found — install git-cliff manually from https://github.com/orhun/git-cliff"; \
 		fi; \
 	else \
-		echo "ℹ️ git-cliff already installed ($$(command -v $(GIT_CLIFF)))"; \
+		echo "INFO: git-cliff already installed ($$(command -v $(GIT_CLIFF)))"; \
 	fi
-	@echo "📦 Downloading Go module dependencies..."
+	@echo "Downloading Go module dependencies..."
 	@$(GO) mod download
 
 man:
-	@echo "📝 Generating man page..."
+	@echo "Generating man page..."
 	@MAN_OUT_DIR=$(dir $(MANPAGE_SRC)) go run ./tools/gen-man
 
 ## Generate CHANGELOG.md from conventional commits
 changelog:
 	@if ! command -v $(GIT_CLIFF) >/dev/null 2>&1; then \
-		echo "❌ git-cliff not found. Run 'make deps' or install git-cliff manually."; \
+		echo "ERROR: git-cliff not found. Run 'make deps' or install git-cliff manually."; \
 		exit 1; \
 	fi
-	@echo "📝 Generating CHANGELOG.md via git-cliff..."
+	@echo "Generating CHANGELOG.md via git-cliff..."
 	@if [ -n "$(CHANGELOG_VERSION)" ]; then \
 		$(GIT_CLIFF) --config cliff.toml --tag "$(CHANGELOG_VERSION)" --output CHANGELOG.md; \
 	else \
@@ -151,7 +151,7 @@ changelog:
 ## Print the release notes snippet used by GoReleaser
 releasenotes:
 	@if [ ! -x "$(CURDIR)/scripts/releasenotes.sh" ]; then \
-		echo "❌ Missing $(CURDIR)/scripts/releasenotes.sh" >&2; \
+		echo "ERROR: Missing $(CURDIR)/scripts/releasenotes.sh" >&2; \
 		exit 1; \
 	fi
 	@"$(CURDIR)/scripts/releasenotes.sh"
@@ -159,12 +159,12 @@ releasenotes:
 ## Print the next semantic version derived from conventional commits
 version:
 	@if ! command -v $(GIT_CLIFF) >/dev/null 2>&1; then \
-		echo "❌ git-cliff not found. Run 'make deps' or install git-cliff manually." >&2; \
+		echo "ERROR: git-cliff not found. Run 'make deps' or install git-cliff manually." >&2; \
 		exit 1; \
 	fi
 	@next_version=$$($(GIT_CLIFF) --config cliff.toml --bumped-version 2>/dev/null); \
 	if [ -z "$$next_version" ]; then \
-		echo "❌ Unable to determine next version" >&2; \
+		echo "ERROR: Unable to determine next version" >&2; \
 		exit 1; \
 	fi; \
 	echo "$$next_version"
@@ -196,7 +196,7 @@ version/bump_type:
 version/github_actions:
 	@output_file="$$GITHUB_OUTPUT"; \
 	if [ -z "$$output_file" ]; then \
-		echo "❌ GITHUB_OUTPUT is not set" >&2; \
+		echo "ERROR: GITHUB_OUTPUT is not set" >&2; \
 		exit 1; \
 	fi; \
 	set -euo pipefail; \
@@ -208,18 +208,18 @@ version/github_actions:
 ## Commit release artifacts (CHANGELOG, manpage, etc.)
 release/commit:
 	@if [ -z "$(RELEASE_VERSION)" ]; then \
-		echo "❌ RELEASE_VERSION is required" >&2; \
+		echo "ERROR: RELEASE_VERSION is required" >&2; \
 		exit 1; \
 	fi
 	@if [ -z "$(RELEASE_BUMP_TYPE)" ]; then \
-		echo "❌ RELEASE_BUMP_TYPE is required" >&2; \
+		echo "ERROR: RELEASE_BUMP_TYPE is required" >&2; \
 		exit 1; \
 	fi
 	@mkdir -p $(dir $(RELEASE_COMMIT_FLAG))
 	@rm -f $(RELEASE_COMMIT_FLAG)
 	git add -A; \
 	if git diff --cached --quiet; then \
-		echo "ℹ️ No release changes to commit"; \
+		echo "INFO: No release changes to commit"; \
 	else \
 		git commit -m "release($(RELEASE_BUMP_TYPE)): $(RELEASE_VERSION)"; \
 		echo "true" > $(RELEASE_COMMIT_FLAG); \
@@ -228,30 +228,30 @@ release/commit:
 ## Tag the release
 release/tag:
 	@if [ -z "$(RELEASE_VERSION)" ]; then \
-		echo "❌ RELEASE_VERSION is required" >&2; \
+		echo "ERROR: RELEASE_VERSION is required" >&2; \
 		exit 1; \
 	fi
 	@if git rev-parse "$(RELEASE_VERSION)" >/dev/null 2>&1; then \
-		echo "ℹ️ Tag $(RELEASE_VERSION) already exists"; \
+		echo "INFO: Tag $(RELEASE_VERSION) already exists"; \
 		git tag -d "$(RELEASE_VERSION)" >/dev/null 2>&1 || true; \
 	fi
 	@git tag -a "$(RELEASE_VERSION)" -m "Release $(RELEASE_VERSION)"
 
 ## Remove all build artifacts
 clean:
-	@echo "🧹 Cleaning build artifacts..."
+	@echo "Cleaning build artifacts..."
 	@rm -rf $(OUT_DIR)
 
 ## Run all tests with coverage
 test:
-	@echo "🧪 Running tests with coverage..."
+	@echo "Running tests with coverage..."
 	@mkdir -p $(OUT_DIR)/coverage
 	@go test ./... -coverprofile=$(OUT_DIR)/coverage/coverage.out
 	@go tool cover -func=$(OUT_DIR)/coverage/coverage.out | tail -n 1
 	@go run github.com/jandelgado/gcov2lcov@v1.1.1 -infile $(OUT_DIR)/coverage/coverage.out -outfile $(OUT_DIR)/coverage/lcov.info >/dev/null
 	@go tool cover -html=$(OUT_DIR)/coverage/coverage.out -o $(OUT_DIR)/coverage/index.html
-	@echo "📄 Coverage (LCOV): $(OUT_DIR)/coverage/lcov.info"
-	@echo "🌐 Coverage (HTML): $(OUT_DIR)/coverage/index.html"
+	@echo "Coverage (LCOV): $(OUT_DIR)/coverage/lcov.info"
+	@echo "Coverage (HTML): $(OUT_DIR)/coverage/index.html"
 
 ## Run all completion hook tests
 test/completions: test/completions/bash test/completions/zsh test/completions/fish
@@ -270,24 +270,24 @@ test/completions/fish:
 
 ## Run benchmarks for the LLM client
 bench:
-	@echo "🏎  Running benchmarks..."
+	@echo "Running benchmarks..."
 	@go test ./internal/llm -bench=BenchmarkGenerateCommitMessages -benchmem
 
 ## Run golangci-lint
 lint:
-	@echo "🧼 Running golangci-lint..."
+	@echo "Running golangci-lint..."
 	@$(GOLANGCI_LINT) run
 
 ## Prepare the codebase for a new commit
 prep: format
-		@echo "🧹 Tidying go.mod/go.sum..."
+		@echo "Tidying go.mod/go.sum..."
 		@go mod tidy
 
 ## Format all Go files
 format:
-		@echo "🎨 Formatting Go files..."
+		@echo "Formatting Go files..."
 		@gofmt -w $(SRC)
-		@echo "🧬 Regenerating code..."
+		@echo "Regenerating code..."
 		@go generate ./...
 
 ## Install just the binary
@@ -296,104 +296,104 @@ install: install/binary
 install/all: install/binary install/completions/all install/man
 
 install/binary: build
-	@echo "📦 Installing binary → $(INSTALL_BIN)"
+	@echo "Installing binary -> $(INSTALL_BIN)"
 	@if install -d $(INSTALL_BIN_DIR) >/dev/null 2>&1; then \
 		install -m755 $(BUILD_BIN) $(INSTALL_BIN); \
 	else \
-		echo "🔐 Elevated permissions required — using sudo"; \
+		echo "Elevated permissions required — using sudo"; \
 		sudo install -d $(INSTALL_BIN_DIR); \
 		sudo install -m755 $(BUILD_BIN) $(INSTALL_BIN); \
 	fi
-	@echo "✅ Binary installed"
+	@echo "Binary installed"
 
 install/completions/all: install/completions/zsh install/completions/bash install/completions/fish install/completions/oh-my-zsh
 
 install/completions/zsh:
-	@echo "📦 Installing Zsh completion assets into $(ZSH_DIR)"
+	@echo "Installing Zsh completion assets into $(ZSH_DIR)"
 	@mkdir -p $(ZSH_DIR)
 	@if [ -f $(ZSH_SCRIPT_SRC) ]; then \
 		install -m644 $(ZSH_SCRIPT_SRC) $(INSTALL_ZSH); \
 	else \
-		echo "⚠️  Missing $(ZSH_SCRIPT_SRC); skipping diffscribe.zsh"; \
+		echo "WARN: Missing $(ZSH_SCRIPT_SRC); skipping diffscribe.zsh"; \
 	fi
-	@echo "👉 Source $$HOME/.zsh/$(ZSH_SCRIPT_NAME) from ~/.zshrc"
+	@echo "NOTE: Source $$HOME/.zsh/$(ZSH_SCRIPT_NAME) from ~/.zshrc"
 
 install/completions/bash:
-	@echo "📦 Installing Bash completion → $(INSTALL_BASH)"
+	@echo "Installing Bash completion -> $(INSTALL_BASH)"
 	@mkdir -p $(BASH_DIR)
 	@if [ -f $(BASH_SCRIPT_SRC) ]; then \
 		install -m644 $(BASH_SCRIPT_SRC) $(INSTALL_BASH); \
 	else \
-		echo "⚠️  Missing $(BASH_SCRIPT_SRC); skipping Bash completion"; \
+		echo "WARN: Missing $(BASH_SCRIPT_SRC); skipping Bash completion"; \
 	fi
-	@echo "👉 Add [[ -r $$HOME/.bash_completion.d/$(BASH_SCRIPT_NAME) ]] && . $$HOME/.bash_completion.d/$(BASH_SCRIPT_NAME) to ~/.bashrc"
+	@echo "NOTE: Add [[ -r $$HOME/.bash_completion.d/$(BASH_SCRIPT_NAME) ]] && . $$HOME/.bash_completion.d/$(BASH_SCRIPT_NAME) to ~/.bashrc"
 
 install/completions/fish:
-	@echo "📦 Installing Fish completion → $(INSTALL_FISH)"
+	@echo "Installing Fish completion -> $(INSTALL_FISH)"
 	@mkdir -p $(FISH_DIR)
 	@if [ -f $(FISH_SCRIPT_SRC) ]; then \
 		install -m644 $(FISH_SCRIPT_SRC) $(INSTALL_FISH); \
 	else \
-		echo "⚠️  Missing $(FISH_SCRIPT_SRC); skipping Fish completion"; \
+		echo "WARN: Missing $(FISH_SCRIPT_SRC); skipping Fish completion"; \
 	fi
-	@echo "👉 Fish auto-loads $$HOME/.config/fish/completions/$(FISH_SCRIPT_NAME)"
+	@echo "NOTE: Fish auto-loads $$HOME/.config/fish/completions/$(FISH_SCRIPT_NAME)"
 
 install/completions/oh-my-zsh:
 	@if [ -f $(OMZ_PLUGIN_SRC) ]; then \
-		echo "📦 Installing Oh-My-Zsh plugin → $(OMZ_PLUGIN_DEST)"; \
+		echo "Installing Oh-My-Zsh plugin -> $(OMZ_PLUGIN_DEST)"; \
 		mkdir -p $(OMZ_PLUGIN_DIR); \
 		install -m644 $(OMZ_PLUGIN_SRC) $(OMZ_PLUGIN_DEST); \
 	else \
-		echo "⚠️  Missing $(OMZ_PLUGIN_SRC); skipping Oh-My-Zsh plugin"; \
+		echo "WARN: Missing $(OMZ_PLUGIN_SRC); skipping Oh-My-Zsh plugin"; \
 	fi
-	@echo "👉 Add 'diffscribe' to the plugins list in ~/.zshrc"
+	@echo "NOTE: Add 'diffscribe' to the plugins list in ~/.zshrc"
 
 install/man: man
-	@echo "📦 Installing man page → $(INSTALL_MAN)"
+	@echo "Installing man page -> $(INSTALL_MAN)"
 	@if install -d $(MANDIR) >/dev/null 2>&1; then \
 		install -m644 $(MANPAGE_SRC) $(INSTALL_MAN); \
 	else \
-		echo "🔐 Elevated permissions required — using sudo"; \
+		echo "Elevated permissions required — using sudo"; \
 		sudo install -d $(MANDIR); \
 		sudo install -m644 $(MANPAGE_SRC) $(INSTALL_MAN); \
 	fi
-	@echo "👉 View it via 'man diffscribe'"
+	@echo "NOTE: View it via 'man diffscribe'"
 
 ## Symlink every artifact (binary + all completions) back to the repo
 link: build man
-	@echo "🔗 Linking binary → $(INSTALL_BIN)"
+	@echo "Linking binary -> $(INSTALL_BIN)"
 	@src="$(CURDIR)/$(BUILD_BIN)"; \
 	if [ -w $(INSTALL_BIN_DIR) ]; then \
 		install -d $(INSTALL_BIN_DIR); \
 		ln -sfn "$$src" $(INSTALL_BIN); \
 	else \
-		echo "🔐 Elevated permissions required — using sudo"; \
+		echo "Elevated permissions required — using sudo"; \
 		sudo install -d $(INSTALL_BIN_DIR); \
 		sudo ln -sfn "$$src" $(INSTALL_BIN); \
 	fi
-	@echo "🔗 Linking Zsh completion → $(INSTALL_ZSH)"
+	@echo "Linking Zsh completion -> $(INSTALL_ZSH)"
 	@install -d $(INSTALL_ZSH_DIR)
 	@ln -sfn "$(CURDIR)/$(ZSH_SCRIPT_SRC)" $(INSTALL_ZSH)
-	@echo "🔗 Linking Bash completion → $(INSTALL_BASH)"
+	@echo "Linking Bash completion -> $(INSTALL_BASH)"
 	@install -d $(INSTALL_BASH_DIR)
 	@ln -sfn "$(CURDIR)/$(BASH_SCRIPT_SRC)" $(INSTALL_BASH)
-	@echo "🔗 Linking Fish completion → $(INSTALL_FISH)"
+	@echo "Linking Fish completion -> $(INSTALL_FISH)"
 	@install -d $(INSTALL_FISH_DIR)
 	@ln -sfn "$(CURDIR)/$(FISH_SCRIPT_SRC)" $(INSTALL_FISH)
-	@echo "🔗 Linking Oh-My-Zsh plugin → $(OMZ_PLUGIN_DEST)"
+	@echo "Linking Oh-My-Zsh plugin -> $(OMZ_PLUGIN_DEST)"
 	@install -d $(OMZ_PLUGIN_DIR)
 	@ln -sfn "$(CURDIR)/$(ZSH_SCRIPT_SRC)" $(OMZ_PLUGIN_DEST)
-	@echo "🔗 Linking man page → $(INSTALL_MAN)"
+	@echo "Linking man page -> $(INSTALL_MAN)"
 	@mandir=$(MANDIR); \
 	if [ -w "$$mandir" ]; then \
 		install -d "$$mandir"; \
 		ln -sfn "$(CURDIR)/$(MANPAGE_SRC)" $(INSTALL_MAN); \
 	else \
-		echo "🔐 Elevated permissions required — using sudo"; \
+		echo "Elevated permissions required — using sudo"; \
 		sudo install -d "$$mandir"; \
 		sudo ln -sfn "$(CURDIR)/$(MANPAGE_SRC)" $(INSTALL_MAN); \
 	fi
-	@echo "✅ Linked all artifacts (remember to source ~/.zsh/diffscribe.zsh or add 'diffscribe' to OMZ plugins)"
+	@echo "Linked all artifacts (remember to source ~/.zsh/diffscribe.zsh or add 'diffscribe' to OMZ plugins)"
 
 ## Remove the installed binary
 uninstall: uninstall/binary
@@ -401,56 +401,56 @@ uninstall: uninstall/binary
 uninstall/all: uninstall/binary uninstall/completions/zsh uninstall/completions/bash uninstall/completions/fish uninstall/completions/oh-my-zsh uninstall/man
 
 uninstall/binary:
-	@echo "🗑️  Removing binary $(INSTALL_BIN)"
+	@echo "Removing binary $(INSTALL_BIN)"
 	@if [ -w $(INSTALL_BIN_DIR) ]; then \
 		rm -f $(INSTALL_BIN); \
 	else \
-		echo "🔐 Elevated permissions required — using sudo"; \
+		echo "Elevated permissions required — using sudo"; \
 		sudo rm -f $(INSTALL_BIN); \
 	fi
 
 uninstall/completions/zsh:
-	@echo "🗑️  Removing Zsh completion assets"
+	@echo "Removing Zsh completion assets"
 	@if [ -w $(INSTALL_ZSH_DIR) ]; then \
 		rm -f $(INSTALL_ZSH); \
 	else \
-		echo "🔐 Elevated permissions required — using sudo"; \
+		echo "Elevated permissions required — using sudo"; \
 		sudo rm -f $(INSTALL_ZSH); \
 	fi
 
 uninstall/completions/bash:
-	@echo "🗑️  Removing Bash completion"
+	@echo "Removing Bash completion"
 	@if [ -w $(INSTALL_BASH_DIR) ]; then \
 		rm -f $(INSTALL_BASH); \
 	else \
-		echo "🔐 Elevated permissions required — using sudo"; \
+		echo "Elevated permissions required — using sudo"; \
 		sudo rm -f $(INSTALL_BASH); \
 	fi
 
 uninstall/completions/fish:
-	@echo "🗑️  Removing Fish completion"
+	@echo "Removing Fish completion"
 	@if [ -w $(INSTALL_FISH_DIR) ]; then \
 		rm -f $(INSTALL_FISH); \
 	else \
-		echo "🔐 Elevated permissions required — using sudo"; \
+		echo "Elevated permissions required — using sudo"; \
 		sudo rm -f $(INSTALL_FISH); \
 	fi
 
 uninstall/completions/oh-my-zsh:
-	@echo "🗑️  Removing Oh-My-Zsh plugin"
+	@echo "Removing Oh-My-Zsh plugin"
 	@if [ -w $(OMZ_PLUGIN_DIR) ]; then \
 		rm -f $(OMZ_PLUGIN_DEST); \
 	else \
-		echo "🔐 Elevated permissions required — using sudo"; \
+		echo "Elevated permissions required — using sudo"; \
 		sudo rm -f $(OMZ_PLUGIN_DEST); \
 	fi
 
 uninstall/man:
-	@echo "🗑️  Removing man page $(INSTALL_MAN)"
+	@echo "Removing man page $(INSTALL_MAN)"
 	@if [ -w $(MANDIR) ]; then \
 		rm -f $(INSTALL_MAN); \
 	else \
-		echo "🔐 Elevated permissions required — using sudo"; \
+		echo "Elevated permissions required — using sudo"; \
 		sudo rm -f $(INSTALL_MAN); \
 	fi
 
