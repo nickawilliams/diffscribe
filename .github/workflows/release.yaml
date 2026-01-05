@@ -58,14 +58,14 @@ jobs:
           echo "${{ env.CARGO_HOME }}/bin" >> "$GITHUB_PATH"
       - name: Dependencies
         run: make deps
-      - name: Changelog
-        run: make changelog
-      - name: Manpage
-        run: make man
       - name: Version
         id: version
         shell: bash
         run: make version/github_actions
+      - name: Changelog
+        run: make changelog CHANGELOG_VERSION="${{ steps.version.outputs.next_version }}"
+      - name: Manpage
+        run: make man
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v4
         with:

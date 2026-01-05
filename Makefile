@@ -142,7 +142,11 @@ changelog:
 		exit 1; \
 	fi
 	@echo "📝 Generating CHANGELOG.md via git-cliff..."
-	@$(GIT_CLIFF) --config cliff.toml --output CHANGELOG.md
+	@if [ -n "$(CHANGELOG_VERSION)" ]; then \
+		$(GIT_CLIFF) --config cliff.toml --tag "$(CHANGELOG_VERSION)" --output CHANGELOG.md; \
+	else \
+		$(GIT_CLIFF) --config cliff.toml --output CHANGELOG.md; \
+	fi
 
 ## Print the release notes snippet used by GoReleaser
 releasenotes:
