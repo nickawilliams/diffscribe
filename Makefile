@@ -21,7 +21,7 @@ GORELEASER := $(GOBIN)/goreleaser
 GORELEASER_VERSION ?= $(shell $(GO) list -m -f '{{.Version}}' github.com/goreleaser/goreleaser/v2 2>/dev/null)
 GORELEASER_PKG := github.com/goreleaser/goreleaser/v2@$(if $(GORELEASER_VERSION),$(GORELEASER_VERSION),latest)
 GIT_CLIFF ?= git-cliff
-VERSION_PKG := github.com/rogwilco/diffscribe/internal/version
+VERSION_PKG := github.com/nickawilliams/diffscribe/internal/version
 GIT_TAG := $(shell git describe --tags --abbrev=0 2>/dev/null || echo v0.0.0)
 GIT_SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 EXACT_TAG := $(shell git describe --tags --exact-match 2>/dev/null)

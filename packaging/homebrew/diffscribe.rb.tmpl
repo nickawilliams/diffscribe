@@ -36,7 +36,7 @@ class Diffscribe < Formula
       resource("source").stage do
         ldflags = %W[
           -s -w
-          -X github.com/rogwilco/diffscribe/internal/version.version=#{version}
+          -X github.com/nickawilliams/diffscribe/internal/version.version=#{version}
         ]
         system "go", "build", "-trimpath", "-ldflags", ldflags.join(" "), "-o", buildpath/binary_name, "./"
         bin.install buildpath/binary_name

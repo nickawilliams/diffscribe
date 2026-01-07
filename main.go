@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rogwilco/diffscribe/cmd"
+	"github.com/nickawilliams/diffscribe/cmd"
 )
 
 func main() {

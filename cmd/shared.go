@@ -12,7 +12,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/rogwilco/diffscribe/internal/llm"
+	"github.com/nickawilliams/diffscribe/internal/llm"
 	"github.com/spf13/viper"
 )
 

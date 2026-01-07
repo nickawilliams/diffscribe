@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/rogwilco/diffscribe/internal/version"
+	"github.com/nickawilliams/diffscribe/internal/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -48,9 +48,7 @@ const (
 	defaultMaxCompletionTokens = 512
 )
 
-var (
-	versionFlag bool
-)
+var versionFlag bool
 
 var rootCmd = &cobra.Command{
 	Use:   "diffscribe [prefix]",

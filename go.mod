@@ -1,4 +1,4 @@
-module github.com/rogwilco/diffscribe
+module github.com/nickawilliams/diffscribe
 
 go 1.25.1
 

@@ -33,7 +33,7 @@ builds:
       - goos: windows
         goarch: arm
     ldflags:
-      - "-s -w -X github.com/rogwilco/diffscribe/internal/version.version={{ .Env.VERSION }}"
+      - "-s -w -X github.com/nickawilliams/diffscribe/internal/version.version={{ .Env.VERSION }}"
     flags:
       - "-trimpath"
 

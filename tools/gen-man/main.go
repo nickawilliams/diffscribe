@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/rogwilco/diffscribe/cmd"
+	"github.com/nickawilliams/diffscribe/cmd"
 	"github.com/spf13/cobra/doc"
 )
 
