@@ -36,7 +36,7 @@ fi
 
 mkdir -p "$(dirname "${RENDERED_FORMULA}")"
 
-echo "🧱 Rendering formula for ${TAG}..."
+echo "INFO: Rendering formula for ${TAG}..."
 "${RENDER_SCRIPT}" "${TAG}" "${RENDERED_FORMULA}"
 
 repo_url="https://github.com/${TAP_REPO}.git"
@@ -52,7 +52,7 @@ if [[ -n "${GITHUB_TOKEN}" ]]; then
   push_args+=( -c http.extraHeader="${header}" )
 fi
 
-echo "🔁 Cloning ${TAP_REPO}..."
+echo "INFO: Cloning ${TAP_REPO}..."
 "${clone_args[@]}" clone "${repo_url}" "${tap_dir}"
 
 formula_dest="${tap_dir}/${TAP_FORMULA_PATH}"
@@ -63,12 +63,12 @@ formula_name="$(basename "${TAP_FORMULA_PATH}" .rb)"
 
 pushd "${tap_dir}" >/dev/null
 if [[ -z "$(git status --porcelain -- "${TAP_FORMULA_PATH}")" ]]; then
-  echo "✅ Formula already up to date"
+  echo "INFO: Formula already up to date"
 else
   git add "${TAP_FORMULA_PATH}"
   git commit -m "publish(formula): ${formula_name} ${TAG}"
-  echo "📤 Pushing to ${TAP_REPO}..."
+  echo "INFO: Pushing to ${TAP_REPO}..."
   "${push_args[@]}" push origin "HEAD:${TAP_BRANCH}"
-  echo "🚀 Published diffscribe ${TAG} to ${TAP_REPO}"
+  echo "INFO: Published diffscribe ${TAG} to ${TAP_REPO}"
 fi
 popd >/dev/null
