@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_PATH="${SCRIPT_DIR}/diffscribe.rb.tmpl"
 OUTPUT_PATH="${SCRIPT_DIR}/diffscribe.rb"
-METADATA_PATH="${SCRIPT_DIR}/metadata.json"
+METADATA_PATH="${SCRIPT_DIR}/../metadata.json"
 
 usage() {
   cat <<'USAGE'
@@ -49,7 +49,7 @@ if [[ ! -f "${METADATA_PATH}" ]]; then
 fi
 
 if ! command -v jq >/dev/null 2>&1; then
-  echo "jq is required to parse packaging/homebrew/metadata.json" >&2
+  echo "jq is required to parse packaging/metadata.json" >&2
   exit 1
 fi
 
@@ -58,12 +58,12 @@ if ! command -v envsubst >/dev/null 2>&1; then
   exit 1
 fi
 
-meta_desc=$(jq -r '.desc' "${METADATA_PATH}")
+meta_description=$(jq -r '.description' "${METADATA_PATH}")
 meta_homepage=$(jq -r '.homepage' "${METADATA_PATH}")
 meta_license=$(jq -r '.license' "${METADATA_PATH}")
 meta_binary=$(jq -r '.binary' "${METADATA_PATH}")
 
-if [[ -z "${meta_desc}" || -z "${meta_homepage}" || -z "${meta_license}" || -z "${meta_binary}" ]]; then
+if [[ -z "${meta_description}" || -z "${meta_homepage}" || -z "${meta_license}" || -z "${meta_binary}" ]]; then
   echo "metadata.json is missing a required field" >&2
   exit 1
 fi
@@ -126,7 +126,7 @@ escape_for_ruby() {
   printf '%s' "${value}"
 }
 
-export FORMULA_DESC="$(escape_for_ruby "${meta_desc}")"
+export FORMULA_DESCRIPTION="$(escape_for_ruby "${meta_description}")"
 export HOMEPAGE="${meta_homepage}"
 export LICENSE="${meta_license}"
 export VERSION="${version_no_v}"
@@ -138,7 +138,7 @@ export SOURCE_URL="${base_download_url}/${source_asset}"
 export SOURCE_SHA="${source_sha}"
 export BINARY_NAME="${meta_binary}"
 
-substitutions='${FORMULA_DESC} ${HOMEPAGE} ${LICENSE} ${VERSION} ${ARM64_URL} ${ARM64_SHA} ${AMD64_URL} ${AMD64_SHA} ${SOURCE_URL} ${SOURCE_SHA} ${BINARY_NAME}'
+substitutions='${FORMULA_DESCRIPTION} ${HOMEPAGE} ${LICENSE} ${VERSION} ${ARM64_URL} ${ARM64_SHA} ${AMD64_URL} ${AMD64_SHA} ${SOURCE_URL} ${SOURCE_SHA} ${BINARY_NAME}'
 
 envsubst "${substitutions}" < "${TEMPLATE_PATH}" > "${OUTPUT_PATH}"
 
