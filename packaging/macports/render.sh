@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_PATH="${SCRIPT_DIR}/Portfile.tmpl"
 OUTPUT_PATH="${SCRIPT_DIR}/Portfile"
-METADATA_PATH="${SCRIPT_DIR}/../metadata.json"
+METADATA_PATH="${SCRIPT_DIR}/../metadata.yaml"
 
 usage() {
   cat <<'USAGE'
@@ -53,8 +53,8 @@ if [[ ! -f "${METADATA_PATH}" ]]; then
   exit 1
 fi
 
-if ! command -v jq >/dev/null 2>&1; then
-  echo "jq is required to parse packaging/metadata.json" >&2
+if ! command -v yq >/dev/null 2>&1; then
+  echo "yq is required to parse packaging/metadata.yaml" >&2
   exit 1
 fi
 
@@ -68,12 +68,12 @@ if ! command -v curl >/dev/null 2>&1; then
   exit 1
 fi
 
-meta_description=$(jq -r '.description' "${METADATA_PATH}")
-meta_homepage=$(jq -r '.homepage' "${METADATA_PATH}")
-meta_license=$(jq -r '.license' "${METADATA_PATH}")
+meta_description=$(yq -r '.description // ""' "${METADATA_PATH}")
+meta_homepage=$(yq -r '.homepage // ""' "${METADATA_PATH}")
+meta_license=$(yq -r '.license // ""' "${METADATA_PATH}")
 
 if [[ -z "${meta_description}" || -z "${meta_homepage}" || -z "${meta_license}" ]]; then
-  echo "metadata.json is missing a required field" >&2
+  echo "metadata.yaml is missing a required field" >&2
   exit 1
 fi
 

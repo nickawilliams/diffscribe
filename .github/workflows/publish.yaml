@@ -35,7 +35,7 @@ jobs:
       - name: Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gettext jq
+          sudo apt-get install -y gettext jq yq
       - name: Resolve Tag
         id: release
         run: |
