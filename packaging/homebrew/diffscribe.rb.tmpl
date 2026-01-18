@@ -45,7 +45,7 @@ class Diffscribe < Formula
 
       unless (bash_completion/binary_name).exist? &&
              (fish_completion/"#{binary_name}.fish").exist? &&
-             (pkgshare/"zsh"/"#{binary_name}.zsh").exist? &&
+             (zsh_completion/"_#{binary_name}").exist? &&
              (pkgshare/"oh-my-zsh"/binary_name/"#{binary_name}.plugin.zsh").exist? &&
              (man1/"#{binary_name}.1").exist?
         odie "Source archive for #{binary_name} #{version} is missing expected shared assets (completions/manpage). Rebuild the release artifacts and republish the Homebrew formula."
@@ -77,7 +77,7 @@ class Diffscribe < Formula
 
     unless (bash_completion/binary_name).exist? &&
            (fish_completion/"#{binary_name}.fish").exist? &&
-           (pkgshare/"zsh"/"#{binary_name}.zsh").exist? &&
+           (zsh_completion/"_#{binary_name}").exist? &&
            (pkgshare/"oh-my-zsh"/binary_name/"#{binary_name}.plugin.zsh").exist? &&
            (man1/"#{binary_name}.1").exist?
       odie "Release archive for #{binary_name} #{version} is missing expected shared assets (completions/manpage). Rebuild the release artifacts and republish the Homebrew formula."
@@ -100,11 +100,11 @@ class Diffscribe < Formula
       fish_completion.install fish_completion_path if fish_completion_path.exist?
 
       if zsh_completion_path.exist?
-        (pkgshare/"zsh").install zsh_completion_path => "#{binary_name}.zsh"
+        zsh_completion.install zsh_completion_path => "_#{binary_name}"
         omz_dir = pkgshare/"oh-my-zsh"/binary_name
         omz_dir.mkpath
         (omz_dir/"#{binary_name}.plugin.zsh").write <<~EOS
-          source "#{pkgshare}/zsh/#{binary_name}.zsh"
+          source "#{zsh_completion}/_#{binary_name}"
         EOS
       end
     end
@@ -121,11 +121,8 @@ class Diffscribe < Formula
       Fish completion:
         #{fish_completion}/#{binary_name}.fish
 
-      Zsh git completion hook:
-        #{pkgshare}/zsh/#{binary_name}.zsh
-
-      To enable in zsh, add this to your ~/.zshrc (after compinit and git completion):
-        source #{pkgshare}/zsh/#{binary_name}.zsh
+      Zsh completion:
+        #{zsh_completion}/_#{binary_name}
 
       Oh-My-Zsh plugin:
         #{pkgshare}/oh-my-zsh/#{binary_name}/#{binary_name}.plugin.zsh
@@ -151,8 +148,8 @@ class Diffscribe < Formula
     assert_match version.to_s, shell_output("#{bin}/#{binary_name} --version")
     assert_predicate bash_completion/binary_name, :exist?
     assert_predicate fish_completion/"#{binary_name}.fish", :exist?
-    assert_predicate pkgshare/"zsh"/"#{binary_name}.zsh", :exist?
+    assert_predicate zsh_completion/"_#{binary_name}", :exist?
     assert_predicate pkgshare/"oh-my-zsh"/binary_name/"#{binary_name}.plugin.zsh", :exist?
-    assert_match "source \"#{pkgshare}/zsh/#{binary_name}.zsh\"", (pkgshare/"oh-my-zsh"/binary_name/"#{binary_name}.plugin.zsh").read
+    assert_match "source \"#{zsh_completion}/_#{binary_name}\"", (pkgshare/"oh-my-zsh"/binary_name/"#{binary_name}.plugin.zsh").read
   end
 end
