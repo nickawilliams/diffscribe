@@ -7,6 +7,11 @@ TAP_BRANCH ?= main
 TAP_FORMULA_PATH := Formula/diffscribe.rb
 TAP_FORMULA := packaging/homebrew/diffscribe.rb
 
+PORT_REPO ?= nickawilliams/fork-macports-ports
+PORT_PULLREQUEST ?= false
+PORTFILE_PATH := devel/diffscribe/Portfile
+PORTFILE := packaging/macports/Portfile
+
 OUT_DIR := .out
 BUILD_BIN := $(OUT_DIR)/build/$(BINARY)
 
@@ -76,7 +81,7 @@ OMZ_PLUGIN_DEST := $(OMZ_PLUGIN_DIR)/diffscribe.plugin.zsh
 		uninstall/completions/bash uninstall/completions/fish uninstall/completions/oh-my-zsh \
 		uninstall/man \
 		deps changelog releasenotes version version/bump_type version/github_actions release/commit release/tag test test/completions test/completions/bash test/completions/zsh \
-		test/completions/fish bench lint format help vars _print-var publish/homebrew
+		test/completions/fish bench lint format help vars _print-var publish/homebrew publish/macports
 
 ## Build all artifacts
 all: build
@@ -103,6 +108,10 @@ release:
 ## Render and publish the Homebrew formula to the tap repository
 publish/homebrew:
 	@./scripts/publish_homebrew.sh "$(TAG)" "$(TAP_REPO)" "$(TAP_BRANCH)" "$(TAP_FORMULA_PATH)" "$(TAP_FORMULA)"
+
+## Render and publish the MacPorts Portfile to the ports repository
+publish/macports:
+	@PORT_PULLREQUEST="$(PORT_PULLREQUEST)" ./scripts/publish_macports.sh "$(TAG)" "$(PORT_REPO)" "$(PORTFILE_PATH)" "$(PORTFILE)"
 
 ## Install Go module and tooling dependencies
 deps:

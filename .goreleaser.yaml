@@ -67,6 +67,11 @@ source:
   enabled: true
   name_template: "{{ .ProjectName }}_{{- .Version }}_source"
 
+checksum:
+  algorithm: sha256
+
+report_sizes: true
+
 changelog:
   disable: true # release notes handled via git-cliff (see release.header)
 

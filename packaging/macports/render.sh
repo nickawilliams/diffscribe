@@ -64,7 +64,7 @@ if ! command -v envsubst >/dev/null 2>&1; then
 fi
 
 if ! command -v curl >/dev/null 2>&1; then
-  echo "curl is required to download the GitHub tag tarball" >&2
+  echo "curl is required to download the GitHub release asset" >&2
   exit 1
 fi
 
@@ -105,7 +105,8 @@ if [[ -n "${token}" ]]; then
   auth_header=(-H "Authorization: Bearer ${token}")
 fi
 
-url="https://github.com/${repo_name}/archive/refs/tags/${TAG}.tar.gz"
+asset_name="diffscribe_${version_no_v}_source.tar.gz"
+url="https://github.com/${repo_name}/releases/download/${TAG}/${asset_name}"
 echo "› downloading ${url}" >&2
 curl -fsSL --retry 3 --retry-delay 2 "${auth_header[@]}" \
   -H "Accept: application/octet-stream" \

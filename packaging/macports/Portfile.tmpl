@@ -5,17 +5,22 @@ go.setup github.com/nickawilliams/diffscribe ${PORT_VERSION} v
 go.offline_build no
 revision 0
 
+distname diffscribe_${version}_source
+distfiles ${distname}.tar.gz
+master_sites https://github.com/nickawilliams/diffscribe/releases/download/v${version}/
+extract.mkdir yes
+
 go.package github.com/nickawilliams/diffscribe
 
 categories devel
 license ${PORT_LICENSE}
-maintainers {github.com:nickawilliams @nickawilliams} openmaintainer
+maintainers github:nickawilliams openmaintainer
 
 description {${PORT_DESCRIPTION}}
 long_description {*}${description}
 homepage ${PORT_HOMEPAGE}
 
-checksums ${distname}${extract.suffix} \
+checksums ${distfiles} \
   rmd160  ${PORT_RMD160} \
   sha256  ${PORT_SHA256} \
   size    ${PORT_SIZE}
@@ -48,7 +53,7 @@ destroot {
 
   xinstall -d ${destroot}${prefix}/share/zsh/site-functions
   xinstall -m 0644 ${worksrcpath}/contrib/completions/zsh/${name}.zsh \
-    ${destroot}${prefix}/share/zsh/site-functions/${name}.zsh
+    ${destroot}${prefix}/share/zsh/site-functions/_${name}
 
   if {[file exists ${worksrcpath}/contrib/man/${name}.1]} {
     xinstall -d ${destroot}${prefix}/share/man/man1
