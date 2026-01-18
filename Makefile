@@ -3,7 +3,6 @@ SHELL := /usr/bin/env bash
 BINARY := diffscribe
 SRC := $(shell find . -name '*.go')
 TAP_REPO ?= nickawilliams/homebrew-tap
-TAP_BRANCH ?= main
 TAP_FORMULA_PATH := Formula/diffscribe.rb
 TAP_FORMULA := packaging/homebrew/diffscribe.rb
 
@@ -107,7 +106,7 @@ release:
 
 ## Render and publish the Homebrew formula to the tap repository
 publish/homebrew:
-	@./scripts/publish_homebrew.sh "$(TAG)" "$(TAP_REPO)" "$(TAP_BRANCH)" "$(TAP_FORMULA_PATH)" "$(TAP_FORMULA)"
+	@./scripts/publish_homebrew.sh "$(TAG)" "$(TAP_REPO)" "$(TAP_FORMULA_PATH)" "$(TAP_FORMULA)"
 
 ## Render and publish the MacPorts Portfile to the ports repository
 publish/macports:

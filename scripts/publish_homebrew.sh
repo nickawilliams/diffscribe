@@ -6,22 +6,21 @@ RENDER_SCRIPT="${ROOT_DIR}/packaging/homebrew/render.sh"
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/publish_homebrew.sh <tag> <tap_repo> <tap_branch> <tap_formula_path> <rendered_formula_path>
+Usage: scripts/publish_homebrew.sh <tag> <tap_repo> <tap_formula_path> <rendered_formula_path>
 Environment:
   GITHUB_TOKEN  Token with write access to the tap repository (required).
 USAGE
 }
 
-if [[ $# -ne 5 ]]; then
+if [[ $# -ne 4 ]]; then
   usage >&2
   exit 1
 fi
 
 TAG="$1"
 TAP_REPO="$2"
-TAP_BRANCH="$3"
-TAP_FORMULA_PATH="$4"
-RENDERED_FORMULA="$5"
+TAP_FORMULA_PATH="$3"
+RENDERED_FORMULA="$4"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 
 if [[ -z "${TAG}" ]]; then
@@ -68,7 +67,7 @@ else
   git add "${TAP_FORMULA_PATH}"
   git commit -m "publish(formula): ${formula_name} ${TAG}"
   echo "INFO: Pushing to ${TAP_REPO}..."
-  "${push_args[@]}" push origin "HEAD:${TAP_BRANCH}"
+  "${push_args[@]}" push origin HEAD
   echo "INFO: Published diffscribe ${TAG} to ${TAP_REPO}"
 fi
 popd >/dev/null
