@@ -41,8 +41,8 @@ echo "INFO: Rendering Portfile for ${TAG}..."
 
 repo_url="https://github.com/${PORT_REPO}.git"
 port_dir="$(mktemp -d)"
-lint_dir=""
-trap 'rm -rf "${port_dir}" "${lint_dir}"' EXIT
+test_dir=""
+trap 'rm -rf "${port_dir}" "${test_dir}"' EXIT
 
 clone_args=(git)
 push_args=(git)
@@ -67,50 +67,81 @@ fi
 mkdir -p "$(dirname "${portfile_dest}")"
 cp "${RENDERED_PORTFILE}" "${portfile_dest}"
 
-# Lint the Portfile
+# Verify the Portfile (lint, test, install)
 if command -v port >/dev/null 2>&1; then
-  echo "INFO: Linting Portfile..."
+  # Create a minimal ports tree in /var/tmp (accessible by macports user)
+  test_dir="$(mktemp -d /var/tmp/macports-test.XXXXXX)"
+  mkdir -p "${test_dir}/$(dirname "${PORTFILE_PATH}")"
+  cp "${RENDERED_PORTFILE}" "${test_dir}/${PORTFILE_PATH}"
 
-  # Create a minimal local repository with just our port for fast linting
-  # (avoids indexing thousands of ports in the full macports-ports fork)
-  lint_dir="$(mktemp -d)"
-  mkdir -p "${lint_dir}/$(dirname "${PORTFILE_PATH}")"
-  cp "${RENDERED_PORTFILE}" "${lint_dir}/${PORTFILE_PATH}"
-
-  # Create portindex for the minimal lint tree
-  pushd "${lint_dir}" >/dev/null
-  portindex >/dev/null 2>&1
+  # Create portindex for the minimal ports tree
+  echo "INFO: Indexing ports tree..."
+  pushd "${test_dir}" >/dev/null
+  portindex
   popd >/dev/null
 
-  # Add minimal lint tree to sources.conf temporarily
+  # Add ports tree to sources.conf temporarily
   sources_conf="/opt/local/etc/macports/sources.conf"
+  sources_conf_modified=false
   if [[ -f "${sources_conf}" ]]; then
     sudo cp "${sources_conf}" "${sources_conf}.bak"
-    echo "file://${lint_dir}" | sudo tee -a "${sources_conf}" >/dev/null
+    echo "file://${test_dir}" | sudo tee -a "${sources_conf}" >/dev/null
+    sources_conf_modified=true
   fi
 
-  # Run port lint (-N for non-interactive mode in CI)
-  if ! port -N lint --nitpick "${port_name}"; then
-    echo "ERROR: Portfile failed lint check" >&2
-    # Restore sources.conf
-    if [[ -f "${sources_conf}.bak" ]]; then
+  # Helper to restore sources.conf
+  restore_sources_conf() {
+    if [[ "${sources_conf_modified}" == "true" && -f "${sources_conf}.bak" ]]; then
       sudo mv "${sources_conf}.bak" "${sources_conf}"
     fi
+  }
+
+  # Run port lint (-N for non-interactive mode in CI)
+  echo "INFO: Linting Portfile..."
+  if ! port -N lint --nitpick "${port_name}"; then
+    echo "ERROR: Portfile failed lint check" >&2
+    restore_sources_conf
     exit 1
   fi
-
-  # Restore sources.conf
-  if [[ -f "${sources_conf}.bak" ]]; then
-    sudo mv "${sources_conf}.bak" "${sources_conf}"
-  fi
-
   echo "INFO: Portfile passed lint check"
+
+  # Run port test
+  echo "INFO: Running port tests..."
+  if ! sudo port -N test "${port_name}"; then
+    echo "ERROR: Port tests failed" >&2
+    restore_sources_conf
+    exit 1
+  fi
+  echo "INFO: Port tests passed"
+
+  # Run full install from source
+  echo "INFO: Installing port from source..."
+  if ! sudo port -N -vst install "${port_name}"; then
+    echo "ERROR: Port installation failed" >&2
+    restore_sources_conf
+    exit 1
+  fi
+  echo "INFO: Port installed successfully"
+
+  # Test basic functionality
+  echo "INFO: Testing binary functionality..."
+  if ! "${port_name}" --version; then
+    echo "ERROR: Binary functionality test failed" >&2
+    restore_sources_conf
+    exit 1
+  fi
+  echo "INFO: Binary functionality verified"
+
+  # Clean up: uninstall the port and restore sources.conf
+  sudo port -N uninstall "${port_name}" || true
+  restore_sources_conf
+
 elif [[ "${PORT_PULLREQUEST:-false}" == "true" ]]; then
-  echo "ERROR: port command not found but PORT_PULLREQUEST=true requires lint" >&2
-  echo "ERROR: Install MacPorts to enable linting" >&2
+  echo "ERROR: port command not found but PORT_PULLREQUEST=true requires verification" >&2
+  echo "ERROR: Install MacPorts to enable linting and testing" >&2
   exit 1
 else
-  echo "WARN: port command not found, skipping lint"
+  echo "WARN: port command not found, skipping verification"
 fi
 
 pushd "${port_dir}" >/dev/null
@@ -142,6 +173,15 @@ else
     current_branch="$(git rev-parse --abbrev-ref HEAD)"
     head_ref="${fork_owner}:${current_branch}"
 
+    # Check for existing open PRs for the same port
+    echo "INFO: Checking for duplicate PRs..."
+    existing_prs=$(gh pr list --repo "${upstream_repo}" --state open --search "${port_name} in:title" --json number,title --jq '.[] | "\(.number): \(.title)"')
+    if [[ -n "${existing_prs}" ]]; then
+      echo "WARN: Found existing open PR(s) for ${port_name}:" >&2
+      echo "${existing_prs}" >&2
+      echo "WARN: Proceeding anyway, but consider closing duplicates" >&2
+    fi
+
     # Gather system info for PR template
     macos_info="macOS $(sw_vers -productVersion) $(sw_vers -buildVersion) $(uname -m)"
     if xcode_version=$(xcodebuild -version 2>/dev/null); then
@@ -156,13 +196,6 @@ else
     pr_template=$(gh api "repos/${upstream_repo}/contents/.github/PULL_REQUEST_TEMPLATE.md" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null || true)
 
     if [[ -n "${pr_template}" ]]; then
-      # Determine PR type checkboxes
-      if [[ "${is_new_port}" == "true" ]]; then
-        type_checkboxes="- [ ] bugfix\n- [x] enhancement\n- [ ] security fix"
-      else
-        type_checkboxes="- [ ] bugfix\n- [x] enhancement\n- [ ] security fix"
-      fi
-
       # Build the PR body with filled-in template
       pr_body="#### Description
 
@@ -170,7 +203,9 @@ Automated update from [diffscribe](https://github.com/nickawilliams/diffscribe) 
 
 ###### Type(s)
 
-${type_checkboxes}
+- [ ] bugfix
+- [x] enhancement
+- [ ] security fix
 
 ###### Tested on
 ${macos_info}
@@ -182,7 +217,10 @@ Have you
 - [x] followed our [Commit Message Guidelines](https://trac.macports.org/wiki/CommitMessages)?
 - [x] squashed and [minimized your commits](https://guide.macports.org/#project.github)?
 - [x] checked that there aren't other open [pull requests](https://github.com/macports/macports-ports/pulls) for the same change?
-- [x] checked your Portfile with \`port lint\`?"
+- [x] checked your Portfile with \`port lint\`?
+- [x] tried existing tests with \`sudo port test\`?
+- [x] tried a full install with \`sudo port -vst install\`?
+- [x] tested basic functionality of all binary files?"
     else
       pr_body="Automated update from [diffscribe](https://github.com/nickawilliams/diffscribe) release ${TAG}.
 

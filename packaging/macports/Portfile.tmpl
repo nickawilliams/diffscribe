@@ -40,6 +40,10 @@ post-build {
   system -W ${worksrcpath} env {*}${build.env} ${go.bin} run ./tools/gen-man
 }
 
+test.run yes
+test.cmd ${worksrcpath}/${name}
+test.args --version
+
 destroot {
   xinstall -m 0755 ${worksrcpath}/${name} ${destroot}${prefix}/bin/${name}
 
