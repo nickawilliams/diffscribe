@@ -69,10 +69,11 @@ cp "${RENDERED_PORTFILE}" "${portfile_dest}"
 
 # Verify the Portfile (lint, test, install)
 if command -v port >/dev/null 2>&1; then
-  # Create a minimal ports tree in /var/tmp (accessible by macports user)
+  # Create a minimal ports tree in /var/tmp with permissions for macports user
   test_dir="$(mktemp -d /var/tmp/macports-test.XXXXXX)"
   mkdir -p "${test_dir}/$(dirname "${PORTFILE_PATH}")"
   cp "${RENDERED_PORTFILE}" "${test_dir}/${PORTFILE_PATH}"
+  chmod -R o+rx "${test_dir}"
 
   # Create portindex for the minimal ports tree
   echo "INFO: Indexing ports tree..."
@@ -116,7 +117,7 @@ if command -v port >/dev/null 2>&1; then
 
   # Run full install from source
   echo "INFO: Installing port from source..."
-  if ! sudo port -N -vst install "${port_name}"; then
+  if ! sudo port -N -vs install "${port_name}"; then
     echo "ERROR: Port installation failed" >&2
     restore_sources_conf
     exit 1

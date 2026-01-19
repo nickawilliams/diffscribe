@@ -5,10 +5,15 @@ go.setup github.com/nickawilliams/diffscribe ${PORT_VERSION} v
 go.offline_build no
 revision 0
 
-distname diffscribe_${version}_source
-distfiles ${distname}.tar.gz
+distfiles diffscribe_${version}_source.tar.gz
 master_sites https://github.com/nickawilliams/diffscribe/releases/download/v${version}/
-extract.mkdir yes
+
+# Override extract to create directory matching golang PortGroup's expected pattern
+extract {
+    set extract_dir ${workpath}/diffscribe-${version}
+    file mkdir ${extract_dir}
+    system -W ${extract_dir} "${portutil::autoconf::tar_command} -xzf ${distpath}/diffscribe_${version}_source.tar.gz"
+}
 
 go.package github.com/nickawilliams/diffscribe
 
@@ -37,7 +42,7 @@ build.args \
   ./
 
 post-build {
-  system -W ${worksrcpath} env {*}${build.env} ${go.bin} run ./tools/gen-man
+  system -W ${worksrcpath} "CGO_ENABLED=0 ${go.bin} run ./tools/gen-man"
 }
 
 test.run yes
