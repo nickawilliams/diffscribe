@@ -115,7 +115,7 @@ if command -v port >/dev/null 2>&1; then
   fi
   echo "INFO: Port tests passed"
 
-  # Run full install from source
+  # Run full install from source (-t trace mode omitted as it causes tar failures in CI)
   echo "INFO: Installing port from source..."
   if ! sudo port -N -vs install "${port_name}"; then
     echo "ERROR: Port installation failed" >&2
