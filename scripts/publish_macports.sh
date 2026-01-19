@@ -119,7 +119,7 @@ if [[ -z "$(git status --porcelain -- "${PORTFILE_PATH}")" ]]; then
 else
   git add "${PORTFILE_PATH}"
   if [[ "${is_new_port}" == "true" ]]; then
-    commit_msg="${port_name}: new port"
+    commit_msg="${port_name}: new port, version ${version}"
   else
     commit_msg="${port_name}: update to ${version}"
   fi
@@ -142,20 +142,51 @@ else
     current_branch="$(git rev-parse --abbrev-ref HEAD)"
     head_ref="${fork_owner}:${current_branch}"
 
+    # Gather system info for PR template
+    macos_info="macOS $(sw_vers -productVersion) $(sw_vers -buildVersion) $(uname -m)"
+    if xcode_version=$(xcodebuild -version 2>/dev/null); then
+      toolchain_info=$(echo "${xcode_version}" | awk 'NR==1{x=$0}END{print x" "$NF}')
+    else
+      clt_version=$(pkgutil --pkg-info=com.apple.pkg.CLTools_Executables 2>/dev/null | awk '/version:/ {print $2}')
+      toolchain_info="Command Line Tools ${clt_version:-unknown}"
+    fi
+
     # Fetch PR template from upstream repo
     echo "INFO: Fetching PR template from ${upstream_repo}..."
     pr_template=$(gh api "repos/${upstream_repo}/contents/.github/PULL_REQUEST_TEMPLATE.md" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null || true)
 
     if [[ -n "${pr_template}" ]]; then
-      # Insert our description after "#### Description" line, replacing the HTML comment
-      pr_body=$(echo "${pr_template}" | sed '/^#### Description$/,/^###### Type/c\
-#### Description\
-\
-Automated update from [diffscribe](https://github.com/nickawilliams/diffscribe) release '"${TAG}"'.\
-\
-###### Type(s)')
+      # Determine PR type checkboxes
+      if [[ "${is_new_port}" == "true" ]]; then
+        type_checkboxes="- [ ] bugfix\n- [x] enhancement\n- [ ] security fix"
+      else
+        type_checkboxes="- [ ] bugfix\n- [x] enhancement\n- [ ] security fix"
+      fi
+
+      # Build the PR body with filled-in template
+      pr_body="#### Description
+
+Automated update from [diffscribe](https://github.com/nickawilliams/diffscribe) release ${TAG}.
+
+###### Type(s)
+
+${type_checkboxes}
+
+###### Tested on
+${macos_info}
+${toolchain_info}
+
+###### Verification
+Have you
+
+- [x] followed our [Commit Message Guidelines](https://trac.macports.org/wiki/CommitMessages)?
+- [x] squashed and [minimized your commits](https://guide.macports.org/#project.github)?
+- [x] checked that there aren't other open [pull requests](https://github.com/macports/macports-ports/pulls) for the same change?
+- [x] checked your Portfile with \`port lint\`?"
     else
-      pr_body="Automated update from [diffscribe](https://github.com/nickawilliams/diffscribe) release ${TAG}."
+      pr_body="Automated update from [diffscribe](https://github.com/nickawilliams/diffscribe) release ${TAG}.
+
+Tested on: ${macos_info}, ${toolchain_info}"
     fi
 
     echo "INFO: Creating PR to ${upstream_repo}..."
