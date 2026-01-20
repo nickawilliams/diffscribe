@@ -1,43 +1,43 @@
-PortSystem 1.0
-PortGroup golang 1.0
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
-go.setup github.com/nickawilliams/diffscribe ${PORT_VERSION} v
-go.offline_build no
-revision 0
+PortSystem          1.0
+PortGroup           golang 1.0
 
-distfiles diffscribe_${version}_source.tar.gz
-master_sites https://github.com/nickawilliams/diffscribe/releases/download/v${version}/
+go.setup            github.com/nickawilliams/diffscribe ${PORT_VERSION} v
+go.offline_build    no
+go.package          github.com/nickawilliams/diffscribe
+revision            0
 
-# Override extract to create directory matching golang PortGroup's expected pattern
-extract {
-    set extract_dir ${workpath}/diffscribe-${version}
-    file mkdir ${extract_dir}
-    system -W ${extract_dir} "${portutil::autoconf::tar_command} -xzf ${distpath}/diffscribe_${version}_source.tar.gz"
-}
+categories          devel
+license             ${PORT_LICENSE}
+maintainers         {github:nickawilliams @nickawilliams} openmaintainer
 
-go.package github.com/nickawilliams/diffscribe
+description         ${PORT_DESCRIPTION}
+long_description    {*}${description}
+homepage            ${PORT_HOMEPAGE}
 
-categories devel
-license ${PORT_LICENSE}
-maintainers github:nickawilliams openmaintainer
+distfiles           diffscribe_${version}_source.tar.gz
+master_sites        https://github.com/nickawilliams/diffscribe/releases/download/v${version}/
 
-description {${PORT_DESCRIPTION}}
-long_description {*}${description}
-homepage ${PORT_HOMEPAGE}
-
-checksums ${distfiles} \
+checksums           ${distfiles} \
   rmd160  ${PORT_RMD160} \
   sha256  ${PORT_SHA256} \
   size    ${PORT_SIZE}
 
-build.env-append CGO_ENABLED=0
-build.args \
-  -o ${worksrcpath}/${name} \
+# Override extract to create directory matching golang PortGroup's expected pattern
+extract {
+  set extract_dir ${workpath}/diffscribe-${version}
+  file mkdir ${extract_dir}
+  system -W ${extract_dir} "${portutil::autoconf::tar_command} -xzf ${distpath}/diffscribe_${version}_source.tar.gz"
+}
+
+build.env-append    CGO_ENABLED=0
+build.args          -o ${worksrcpath}/${name} \
   -trimpath \
   -ldflags \" \
-    -s \
-    -w \
-    -X ${go.package}/internal/version.version=${version} \
+  -s \
+  -w \
+  -X ${go.package}/internal/version.version=${version} \
   \" \
   ./
 
@@ -45,9 +45,9 @@ post-build {
   system -W ${worksrcpath} "CGO_ENABLED=0 ${go.bin} run ./tools/gen-man"
 }
 
-test.run yes
-test.cmd ${worksrcpath}/${name}
-test.args --version
+test.run            yes
+test.cmd            ${worksrcpath}/${name}
+test.args           --version
 
 destroot {
   xinstall -m 0755 ${worksrcpath}/${name} ${destroot}${prefix}/bin/${name}
