@@ -68,7 +68,7 @@ source:
   name_template: "{{ .ProjectName }}_{{- .Version }}_source"
 
 nfpms:
-  - id: deb
+  - id: linux
     package_name: "{{ .Env.PKG_BINARY }}"
     vendor: Nick Williams
     homepage: "{{ .Env.PKG_HOMEPAGE }}"
@@ -77,6 +77,7 @@ nfpms:
     license: "{{ .Env.PKG_LICENSE }}"
     formats:
       - deb
+      - rpm
     bindir: /usr/bin
     contents:
       - src: contrib/man/diffscribe.1
