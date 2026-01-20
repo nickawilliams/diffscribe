@@ -157,9 +157,6 @@ else
     commit_msg="${port_name}: update to ${version}"
   fi
   git commit -m "${commit_msg}"
-  echo "INFO: Pushing to ${PORT_REPO}..."
-  "${push_args[@]}" push origin HEAD
-  echo "INFO: Published diffscribe ${TAG} to ${PORT_REPO}"
 
   # Create PR to upstream repo if enabled
   if [[ "${PORT_PULLREQUEST:-false}" == "true" ]]; then
@@ -171,9 +168,17 @@ else
       exit 1
     fi
 
+    # Create and push to a dedicated branch for this update
+    branch_name="${port_name}-${version}"
+    echo "INFO: Creating branch ${branch_name}..."
+    git checkout -b "${branch_name}"
+
+    echo "INFO: Pushing to ${PORT_REPO}..."
+    "${push_args[@]}" push -u origin "${branch_name}"
+    echo "INFO: Published diffscribe ${TAG} to ${PORT_REPO}:${branch_name}"
+
     fork_owner="${PORT_REPO%%/*}"
-    current_branch="$(git rev-parse --abbrev-ref HEAD)"
-    head_ref="${fork_owner}:${current_branch}"
+    head_ref="${fork_owner}:${branch_name}"
 
     # Check for existing open PRs for the same port
     echo "INFO: Checking for duplicate PRs..."
@@ -246,6 +251,11 @@ Tested on: ${macos_info}, ${toolchain_info}"
       --title "${commit_msg}" \
       --body "${pr_body}")
     echo "INFO: Created PR: ${pr_url}"
+  else
+    # No PR requested, push to default branch
+    echo "INFO: Pushing to ${PORT_REPO}..."
+    "${push_args[@]}" push origin HEAD
+    echo "INFO: Published diffscribe ${TAG} to ${PORT_REPO}"
   fi
 fi
 popd >/dev/null
