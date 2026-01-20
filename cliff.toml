@@ -18,21 +18,33 @@ body = """
 {%- endmacro -%}
 
 {%- macro group(name, commits) -%}
-  ### {{ name }}
+### {{ name }}
 
-  {% for commit in commits | filter(attribute="scope") | sort(attribute="scope") -%}
-    - {{ self::print_commit(commit=commit) }}
-  {% endfor -%}
-  {% for commit in commits -%}
-    {%- if not commit.scope -%}
-      - {{ self::print_commit(commit=commit) }}
-    {% endif -%}
-  {% endfor -%}
+{% set scoped = commits | filter(attribute="scope") | sort(attribute="scope") | group_by(attribute="scope") -%}
+{% for commit in commits -%}
+{% if not commit.scope -%}
+- {{ self::print_commit_body(commit=commit) }}
+{% endif -%}
+{% endfor -%}
+{% for scope, scope_commits in scoped -%}
+{% if scope_commits | length == 1 -%}
+- **{{ scope | upper_first }}:** {{ self::print_commit_body(commit=scope_commits | first) }}
+{% else -%}
+- **{{ scope | upper_first }}**
+{% for commit in scope_commits %}
+{{ "  " }}- {{ self::print_commit_body(commit=commit) }}
+{%- endfor %}
+{% endif -%}
+{% endfor -%}
+{% endmacro -%}
+
+{%- macro print_commit_body(commit) -%}
+{{ commit.message | split(pat="\n") | first | trim | upper_first }} - ({{ self::commit_meta(commit=commit) }})
 {%- endmacro -%}
 
 {%- macro print_commit(commit) -%}
-  {%- if commit.scope -%}**{{ commit.scope | upper_first }}:** {% endif %}\
-  {{ commit.message | split(pat="\n") | first | trim | upper_first}} - ({{ self::commit_meta(commit=commit) }})
+{%- if commit.scope -%}**{{ commit.scope | upper_first }}:** {% endif -%}
+{{ commit.message | split(pat="\n") | first | trim | upper_first}} - ({{ self::commit_meta(commit=commit) }})
 {%- endmacro -%}
 
 {%- macro commit_meta(commit) -%}
