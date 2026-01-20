@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_PATH="${SCRIPT_DIR}/Portfile.tmpl"
 OUTPUT_PATH="${SCRIPT_DIR}/Portfile"
-METADATA_PATH="${SCRIPT_DIR}/../metadata.yaml"
+METADATA_PATH="${SCRIPT_DIR}/../../project.yaml"
 
 usage() {
   cat <<'USAGE'
@@ -54,7 +54,7 @@ if [[ ! -f "${METADATA_PATH}" ]]; then
 fi
 
 if ! command -v yq >/dev/null 2>&1; then
-  echo "yq is required to parse packaging/metadata.yaml" >&2
+  echo "yq is required to parse project.yaml" >&2
   exit 1
 fi
 

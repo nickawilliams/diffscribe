@@ -1,6 +1,12 @@
 SHELL := /usr/bin/env bash
 
-BINARY := diffscribe
+# Project metadata (read from project.yaml)
+PROJECT_YAML := project.yaml
+BINARY := $(shell yq -r '.binary' $(PROJECT_YAML))
+PKG_DESCRIPTION := $(shell yq -r '.description' $(PROJECT_YAML))
+PKG_HOMEPAGE := $(shell yq -r '.homepage' $(PROJECT_YAML))
+PKG_LICENSE := $(shell yq -r '.license' $(PROJECT_YAML))
+
 SRC := $(shell find . -name '*.go')
 TAP_REPO ?= nickawilliams/homebrew-tap
 TAP_FORMULA_PATH := Formula/diffscribe.rb
@@ -96,12 +102,20 @@ dist:
 	@echo "Building release artifacts via GoReleaser..."
 	@notes="$$($(MAKE) --no-print-directory releasenotes)"; \
 	GIT_CLIFF_RELEASE_NOTES="$$notes" \
+	PKG_BINARY="$(BINARY)" \
+	PKG_DESCRIPTION="$(PKG_DESCRIPTION)" \
+	PKG_HOMEPAGE="$(PKG_HOMEPAGE)" \
+	PKG_LICENSE="$(PKG_LICENSE)" \
 		$(GORELEASER) release --snapshot --clean
 
 release:
 	@echo "Building release artifacts via GoReleaser..."
 	@notes="$$($(MAKE) --no-print-directory releasenotes)"; \
 	GIT_CLIFF_RELEASE_NOTES="$$notes" \
+	PKG_BINARY="$(BINARY)" \
+	PKG_DESCRIPTION="$(PKG_DESCRIPTION)" \
+	PKG_HOMEPAGE="$(PKG_HOMEPAGE)" \
+	PKG_LICENSE="$(PKG_LICENSE)" \
 		$(GORELEASER) release --clean
 
 ## Render and publish the Homebrew formula to the tap repository

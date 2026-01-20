@@ -67,6 +67,27 @@ source:
   enabled: true
   name_template: "{{ .ProjectName }}_{{- .Version }}_source"
 
+nfpms:
+  - id: deb
+    package_name: "{{ .Env.PKG_BINARY }}"
+    vendor: Nick Williams
+    homepage: "{{ .Env.PKG_HOMEPAGE }}"
+    maintainer: Nick Williams <nick@diffscribe.dev>
+    description: "{{ .Env.PKG_DESCRIPTION }}"
+    license: "{{ .Env.PKG_LICENSE }}"
+    formats:
+      - deb
+    bindir: /usr/bin
+    contents:
+      - src: contrib/man/diffscribe.1
+        dst: /usr/share/man/man1/diffscribe.1
+      - src: contrib/completions/bash/diffscribe.bash
+        dst: /usr/share/bash-completion/completions/diffscribe
+      - src: contrib/completions/zsh/diffscribe.zsh
+        dst: /usr/share/zsh/vendor-completions/_diffscribe
+      - src: contrib/completions/fish/diffscribe.fish
+        dst: /usr/share/fish/vendor_completions.d/diffscribe.fish
+
 checksum:
   algorithm: sha256
 
