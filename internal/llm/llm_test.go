@@ -273,3 +273,54 @@ func BenchmarkGenerateCommitMessages(b *testing.B) {
 		}
 	}
 }
+
+func TestNewProvider(t *testing.T) {
+	tests := []struct {
+		name     string
+		provider string
+		wantErr  bool
+	}{
+		{
+			name:     "openai provider",
+			provider: "openai",
+			wantErr:  false,
+		},
+		{
+			name:     "openai with mixed case",
+			provider: "OpenAI",
+			wantErr:  false,
+		},
+		{
+			name:     "empty defaults to openai",
+			provider: "",
+			wantErr:  false,
+		},
+		{
+			name:     "unsupported provider",
+			provider: "unsupported",
+			wantErr:  true,
+		},
+		{
+			name:     "another unsupported provider",
+			provider: "anthropic",
+			wantErr:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := Config{Provider: tt.provider}
+			p, err := newProvider(cfg)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("newProvider() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && p == nil {
+				t.Error("newProvider() returned nil provider without error")
+			}
+			if tt.wantErr && err != nil && !strings.Contains(err.Error(), "unsupported provider") {
+				t.Errorf("error should mention 'unsupported provider', got %v", err)
+			}
+		})
+	}
+}

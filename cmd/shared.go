@@ -190,7 +190,10 @@ func stubCandidates(c gitContext, prefix string) []string {
 	return withPrefix
 }
 
-func run(name string, args ...string) string {
+// runFunc is the function used to execute shell commands. It can be replaced in tests.
+var runFunc = runCommand
+
+func runCommand(name string, args ...string) string {
 	cmd := exec.Command(name, args...)
 	cmd.Env = os.Environ()
 	var out bytes.Buffer
@@ -208,6 +211,10 @@ func run(name string, args ...string) string {
 		_ = cmd.Process.Kill()
 	}
 	return out.String()
+}
+
+func run(name string, args ...string) string {
+	return runFunc(name, args...)
 }
 
 func nonEmptyLines(s string) []string {
