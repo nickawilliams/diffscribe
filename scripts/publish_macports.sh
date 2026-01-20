@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RENDER_SCRIPT="${ROOT_DIR}/packaging/macports/render.sh"
+PROJECT_YAML="${ROOT_DIR}/project.yaml"
 
 usage() {
   cat <<'USAGE'
@@ -192,15 +193,25 @@ else
       toolchain_info="Command Line Tools ${clt_version:-unknown}"
     fi
 
+    # Build PR description based on new port vs update
+    if [[ "${is_new_port}" == "true" ]]; then
+      pkg_binary=$(yq -r '.binary' "${PROJECT_YAML}")
+      pkg_description=$(yq -r '.description' "${PROJECT_YAML}")
+      pr_description="${pkg_binary}: ${pkg_description}
+
+New port submission from [diffscribe](https://github.com/nickawilliams/diffscribe) release ${TAG}."
+    else
+      pr_description="Automated update from [diffscribe](https://github.com/nickawilliams/diffscribe) release ${TAG}."
+    fi
+
     # Fetch PR template from upstream repo
     echo "INFO: Fetching PR template from ${upstream_repo}..."
     pr_template=$(gh api "repos/${upstream_repo}/contents/.github/PULL_REQUEST_TEMPLATE.md" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null || true)
 
     if [[ -n "${pr_template}" ]]; then
-      # Build the PR body with filled-in template
       pr_body="#### Description
 
-Automated update from [diffscribe](https://github.com/nickawilliams/diffscribe) release ${TAG}.
+${pr_description}
 
 ###### Type(s)
 
@@ -223,7 +234,7 @@ Have you
 - [x] tried a full install with \`sudo port -vst install\`?
 - [x] tested basic functionality of all binary files?"
     else
-      pr_body="Automated update from [diffscribe](https://github.com/nickawilliams/diffscribe) release ${TAG}.
+      pr_body="${pr_description}
 
 Tested on: ${macos_info}, ${toolchain_info}"
     fi
