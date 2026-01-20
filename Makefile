@@ -118,13 +118,13 @@ release:
 	PKG_LICENSE="$(PKG_LICENSE)" \
 		$(GORELEASER) release --clean
 
-## Render and publish the Homebrew formula to the tap repository
-publish/homebrew:
-	@./scripts/publish_homebrew.sh "$(TAG)" "$(TAP_REPO)" "$(TAP_FORMULA_PATH)" "$(TAP_FORMULA)"
-
 ## Render and publish the MacPorts Portfile to the ports repository
 publish/macports:
 	@PORT_PULLREQUEST="$(PORT_PULLREQUEST)" ./scripts/publish_macports.sh "$(TAG)" "$(PORT_REPO)" "$(PORTFILE_PATH)" "$(PORTFILE)"
+
+## Render and publish the Homebrew formula to the tap repository
+publish/homebrew:
+	@./scripts/publish_homebrew.sh "$(TAG)" "$(TAP_REPO)" "$(TAP_FORMULA_PATH)" "$(TAP_FORMULA)"
 
 ## Install Go module and tooling dependencies
 deps:
