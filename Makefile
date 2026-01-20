@@ -6,6 +6,8 @@ BINARY := $(shell yq -r '.binary' $(PROJECT_YAML))
 PKG_DESCRIPTION := $(shell yq -r '.description' $(PROJECT_YAML))
 PKG_HOMEPAGE := $(shell yq -r '.homepage' $(PROJECT_YAML))
 PKG_LICENSE := $(shell yq -r '.license' $(PROJECT_YAML))
+PKG_MAINTAINER_NAME := $(shell yq -r '.maintainer.name' $(PROJECT_YAML))
+PKG_MAINTAINER_EMAIL := $(shell yq -r '.maintainer.email' $(PROJECT_YAML))
 
 SRC := $(shell find . -name '*.go')
 TAP_REPO ?= nickawilliams/homebrew-tap
@@ -106,6 +108,8 @@ dist:
 	PKG_DESCRIPTION="$(PKG_DESCRIPTION)" \
 	PKG_HOMEPAGE="$(PKG_HOMEPAGE)" \
 	PKG_LICENSE="$(PKG_LICENSE)" \
+	PKG_MAINTAINER_NAME="$(PKG_MAINTAINER_NAME)" \
+	PKG_MAINTAINER_EMAIL="$(PKG_MAINTAINER_EMAIL)" \
 		$(GORELEASER) release --snapshot --clean
 
 release:
@@ -116,6 +120,8 @@ release:
 	PKG_DESCRIPTION="$(PKG_DESCRIPTION)" \
 	PKG_HOMEPAGE="$(PKG_HOMEPAGE)" \
 	PKG_LICENSE="$(PKG_LICENSE)" \
+	PKG_MAINTAINER_NAME="$(PKG_MAINTAINER_NAME)" \
+	PKG_MAINTAINER_EMAIL="$(PKG_MAINTAINER_EMAIL)" \
 		$(GORELEASER) release --clean
 
 ## Render and publish the MacPorts Portfile to the ports repository

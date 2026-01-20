@@ -70,9 +70,9 @@ source:
 nfpms:
   - id: linux
     package_name: "{{ .Env.PKG_BINARY }}"
-    vendor: Nick Williams
+    vendor: "{{ .Env.PKG_MAINTAINER_NAME }}"
     homepage: "{{ .Env.PKG_HOMEPAGE }}"
-    maintainer: Nick Williams <nick@diffscribe.dev>
+    maintainer: "{{ .Env.PKG_MAINTAINER_NAME }} <{{ .Env.PKG_MAINTAINER_EMAIL }}>"
     description: "{{ .Env.PKG_DESCRIPTION }}"
     license: "{{ .Env.PKG_LICENSE }}"
     formats:
