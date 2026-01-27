@@ -64,8 +64,7 @@ archives:
     wrap_in_directory: true
 
 source:
-  enabled: true
-  name_template: "{{ .ProjectName }}_{{- .Version }}_source"
+  enabled: false
 
 nfpms:
   - id: linux

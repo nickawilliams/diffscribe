@@ -11,7 +11,7 @@ usage() {
 Usage: packaging/macports/render.sh <tag> [output]
 
 Arguments:
-  <tag>    Release tag (e.g. v1.2.3) whose source tarball should back the Portfile.
+  <tag>    Release tag (e.g. v1.2.3) to generate the Portfile for.
   [output] Optional path for the rendered Portfile (defaults to packaging/macports/Portfile).
 
 Environment:
@@ -105,11 +105,10 @@ if [[ -n "${token}" ]]; then
   auth_header=(-H "Authorization: Bearer ${token}")
 fi
 
-asset_name="diffscribe_${version_no_v}_source.tar.gz"
-url="https://github.com/${repo_name}/releases/download/${TAG}/${asset_name}"
+# Use GitHub's auto-generated source archive (matches golang PortGroup expectations)
+url="https://github.com/${repo_name}/archive/refs/tags/${TAG}.tar.gz"
 echo "› downloading ${url}" >&2
 curl -fsSL --retry 3 --retry-delay 2 "${auth_header[@]}" \
-  -H "Accept: application/octet-stream" \
   -o "${tarball_path}" \
   "${url}"
 
