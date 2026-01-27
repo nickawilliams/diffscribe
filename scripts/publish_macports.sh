@@ -65,9 +65,6 @@ if [[ ! -f "${portfile_dest}" ]]; then
   is_new_port=true
 fi
 
-mkdir -p "$(dirname "${portfile_dest}")"
-cp "${RENDERED_PORTFILE}" "${portfile_dest}"
-
 # Verify the Portfile (lint, test, install)
 if command -v port >/dev/null 2>&1; then
   # Create a minimal ports tree in /var/tmp with permissions for macports user
@@ -170,9 +167,6 @@ if [[ "${PORT_PULLREQUEST:-false}" == "true" ]]; then
   fork_owner="${PORT_REPO%%/*}"
   head_ref="${fork_owner}:${branch_name}"
 
-  # Stash the Portfile content before switching branches
-  portfile_content="$(cat "${PORTFILE_PATH}")"
-
   # Check if branch already exists on remote
   branch_exists=false
   if git ls-remote --heads origin "${branch_name}" | grep -q "${branch_name}"; then
@@ -186,9 +180,9 @@ if [[ "${PORT_PULLREQUEST:-false}" == "true" ]]; then
     git checkout -b "${branch_name}"
   fi
 
-  # Apply the Portfile content and commit
+  # Copy the Portfile to the branch
   mkdir -p "$(dirname "${PORTFILE_PATH}")"
-  printf '%s\n' "${portfile_content}" > "${PORTFILE_PATH}"
+  cp "${RENDERED_PORTFILE}" "${PORTFILE_PATH}"
 
   if [[ -z "$(git status --porcelain -- "${PORTFILE_PATH}")" ]]; then
     echo "INFO: Portfile already up to date"
@@ -280,6 +274,9 @@ Tested on: ${macos_info}, ${toolchain_info}"
   echo "INFO: Created PR: ${pr_url}"
 else
   # No PR requested, push to default branch
+  mkdir -p "$(dirname "${PORTFILE_PATH}")"
+  cp "${RENDERED_PORTFILE}" "${PORTFILE_PATH}"
+
   if [[ -z "$(git status --porcelain -- "${PORTFILE_PATH}")" ]]; then
     echo "INFO: Portfile already up to date"
   else
