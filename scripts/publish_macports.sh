@@ -202,7 +202,7 @@ if [[ "${PORT_PULLREQUEST:-false}" == "true" ]]; then
   echo "INFO: Pushed to ${PORT_REPO}:${branch_name}"
 
   # Check for existing open PR from this branch
-  existing_pr=$(gh pr list --repo "${upstream_repo}" --head "${head_ref}" --state open --json number,url --jq '.[0] // empty')
+  existing_pr=$(gh pr list --repo "${upstream_repo}" --head "${branch_name}" --state open --json number,url --jq '.[0] // empty')
   if [[ -n "${existing_pr}" ]]; then
     pr_url=$(echo "${existing_pr}" | jq -r '.url')
     echo "INFO: Existing PR updated: ${pr_url}"
