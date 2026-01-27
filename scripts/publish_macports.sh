@@ -147,74 +147,101 @@ else
 fi
 
 pushd "${port_dir}" >/dev/null
-if [[ -z "$(git status --porcelain -- "${PORTFILE_PATH}")" ]]; then
-  echo "INFO: Portfile already up to date"
+
+# Determine commit message
+if [[ "${is_new_port}" == "true" ]]; then
+  commit_msg="${port_name}: new port, version ${version}"
 else
-  git add "${PORTFILE_PATH}"
-  if [[ "${is_new_port}" == "true" ]]; then
-    commit_msg="${port_name}: new port, version ${version}"
-  else
-    commit_msg="${port_name}: update to ${version}"
+  commit_msg="${port_name}: update to ${version}"
+fi
+
+# Create PR to upstream repo if enabled
+if [[ "${PORT_PULLREQUEST:-false}" == "true" ]]; then
+  echo "INFO: Querying upstream repo for ${PORT_REPO}..."
+  upstream_repo=$(gh repo view "${PORT_REPO}" --json parent --jq 'if .parent then "\(.parent.owner.login)/\(.parent.name)" else empty end')
+  if [[ -z "${upstream_repo}" ]]; then
+    echo "ERROR: Could not determine upstream repo for ${PORT_REPO}" >&2
+    echo "ERROR: Is ${PORT_REPO} a fork? PR creation requires a fork relationship." >&2
+    exit 1
   fi
-  git commit -m "${commit_msg}"
 
-  # Create PR to upstream repo if enabled
-  if [[ "${PORT_PULLREQUEST:-false}" == "true" ]]; then
-    echo "INFO: Querying upstream repo for ${PORT_REPO}..."
-    upstream_repo=$(gh repo view "${PORT_REPO}" --json parent --jq 'if .parent then "\(.parent.owner.login)/\(.parent.name)" else empty end')
-    if [[ -z "${upstream_repo}" ]]; then
-      echo "ERROR: Could not determine upstream repo for ${PORT_REPO}" >&2
-      echo "ERROR: Is ${PORT_REPO} a fork? PR creation requires a fork relationship." >&2
-      exit 1
-    fi
+  # Create or update branch for this version
+  branch_name="${port_name}-${version}"
+  fork_owner="${PORT_REPO%%/*}"
+  head_ref="${fork_owner}:${branch_name}"
 
-    # Create and push to a dedicated branch for this update
-    branch_name="${port_name}-${version}"
+  # Stash the Portfile content before switching branches
+  portfile_content="$(cat "${PORTFILE_PATH}")"
+
+  # Check if branch already exists on remote
+  branch_exists=false
+  if git ls-remote --heads origin "${branch_name}" | grep -q "${branch_name}"; then
+    echo "INFO: Branch ${branch_name} already exists, updating..."
+    git fetch origin "${branch_name}"
+    git checkout "${branch_name}"
+    git reset --hard "origin/${branch_name}"
+    branch_exists=true
+  else
     echo "INFO: Creating branch ${branch_name}..."
     git checkout -b "${branch_name}"
+  fi
 
-    echo "INFO: Pushing to ${PORT_REPO}..."
-    "${push_args[@]}" push -u origin "${branch_name}"
-    echo "INFO: Published diffscribe ${TAG} to ${PORT_REPO}:${branch_name}"
+  # Apply the Portfile content and commit
+  mkdir -p "$(dirname "${PORTFILE_PATH}")"
+  printf '%s\n' "${portfile_content}" > "${PORTFILE_PATH}"
 
-    fork_owner="${PORT_REPO%%/*}"
-    head_ref="${fork_owner}:${branch_name}"
+  if [[ -z "$(git status --porcelain -- "${PORTFILE_PATH}")" ]]; then
+    echo "INFO: Portfile already up to date"
+    popd >/dev/null
+    exit 0
+  fi
 
-    # Check for existing open PRs for the same port
-    echo "INFO: Checking for duplicate PRs..."
-    existing_prs=$(gh pr list --repo "${upstream_repo}" --state open --search "${port_name} in:title" --json number,title --jq '.[] | "\(.number): \(.title)"')
-    if [[ -n "${existing_prs}" ]]; then
-      echo "WARN: Found existing open PR(s) for ${port_name}:" >&2
-      echo "${existing_prs}" >&2
-      echo "WARN: Proceeding anyway, but consider closing duplicates" >&2
-    fi
+  git add "${PORTFILE_PATH}"
+  if [[ "${branch_exists}" == "true" ]]; then
+    # Amend existing commit to keep history squashed (MacPorts preference)
+    git commit --amend -m "${commit_msg}"
+  else
+    git commit -m "${commit_msg}"
+  fi
+  "${push_args[@]}" push --force-with-lease -u origin "${branch_name}"
+  echo "INFO: Pushed to ${PORT_REPO}:${branch_name}"
 
-    # Gather system info for PR template
-    macos_info="macOS $(sw_vers -productVersion) $(sw_vers -buildVersion) $(uname -m)"
-    if xcode_version=$(xcodebuild -version 2>/dev/null); then
-      toolchain_info=$(echo "${xcode_version}" | awk 'NR==1{x=$0}END{print x" "$NF}')
-    else
-      clt_version=$(pkgutil --pkg-info=com.apple.pkg.CLTools_Executables 2>/dev/null | awk '/version:/ {print $2}')
-      toolchain_info="Command Line Tools ${clt_version:-unknown}"
-    fi
+  # Check for existing open PR from this branch
+  existing_pr=$(gh pr list --repo "${upstream_repo}" --head "${head_ref}" --state open --json number,url --jq '.[0] // empty')
+  if [[ -n "${existing_pr}" ]]; then
+    pr_url=$(echo "${existing_pr}" | jq -r '.url')
+    echo "INFO: Existing PR updated: ${pr_url}"
+    popd >/dev/null
+    exit 0
+  fi
 
-    # Build PR description based on new port vs update
-    if [[ "${is_new_port}" == "true" ]]; then
-      pkg_binary=$(yq -r '.binary' "${PROJECT_YAML}")
-      pkg_description=$(yq -r '.description' "${PROJECT_YAML}")
-      pr_description="${pkg_binary}: ${pkg_description}
+  # No existing PR, create one
+  # Gather system info for PR template
+  macos_info="macOS $(sw_vers -productVersion) $(sw_vers -buildVersion) $(uname -m)"
+  if xcode_version=$(xcodebuild -version 2>/dev/null); then
+    toolchain_info=$(echo "${xcode_version}" | awk 'NR==1{x=$0}END{print x" "$NF}')
+  else
+    clt_version=$(pkgutil --pkg-info=com.apple.pkg.CLTools_Executables 2>/dev/null | awk '/version:/ {print $2}')
+    toolchain_info="Command Line Tools ${clt_version:-unknown}"
+  fi
+
+  # Build PR description based on new port vs update
+  if [[ "${is_new_port}" == "true" ]]; then
+    pkg_binary=$(yq -r '.binary' "${PROJECT_YAML}")
+    pkg_description=$(yq -r '.description' "${PROJECT_YAML}")
+    pr_description="${pkg_binary}: ${pkg_description}
 
 New port submission from [diffscribe](https://github.com/nickawilliams/diffscribe) release ${TAG}."
-    else
-      pr_description="Automated update from [diffscribe](https://github.com/nickawilliams/diffscribe) release ${TAG}."
-    fi
+  else
+    pr_description="Automated update from [diffscribe](https://github.com/nickawilliams/diffscribe) release ${TAG}."
+  fi
 
-    # Fetch PR template from upstream repo
-    echo "INFO: Fetching PR template from ${upstream_repo}..."
-    pr_template=$(gh api "repos/${upstream_repo}/contents/.github/PULL_REQUEST_TEMPLATE.md" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null || true)
+  # Fetch PR template from upstream repo
+  echo "INFO: Fetching PR template from ${upstream_repo}..."
+  pr_template=$(gh api "repos/${upstream_repo}/contents/.github/PULL_REQUEST_TEMPLATE.md" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null || true)
 
-    if [[ -n "${pr_template}" ]]; then
-      pr_body="#### Description
+  if [[ -n "${pr_template}" ]]; then
+    pr_body="#### Description
 
 ${pr_description}
 
@@ -238,21 +265,26 @@ Have you
 - [x] tried existing tests with \`sudo port test\`?
 - [x] tried a full install with \`sudo port -vst install\`?
 - [x] tested basic functionality of all binary files?"
-    else
-      pr_body="${pr_description}
+  else
+    pr_body="${pr_description}
 
 Tested on: ${macos_info}, ${toolchain_info}"
-    fi
+  fi
 
-    echo "INFO: Creating PR to ${upstream_repo}..."
-    pr_url=$(gh pr create \
-      --repo "${upstream_repo}" \
-      --head "${head_ref}" \
-      --title "${commit_msg}" \
-      --body "${pr_body}")
-    echo "INFO: Created PR: ${pr_url}"
+  echo "INFO: Creating PR to ${upstream_repo}..."
+  pr_url=$(gh pr create \
+    --repo "${upstream_repo}" \
+    --head "${head_ref}" \
+    --title "${commit_msg}" \
+    --body "${pr_body}")
+  echo "INFO: Created PR: ${pr_url}"
+else
+  # No PR requested, push to default branch
+  if [[ -z "$(git status --porcelain -- "${PORTFILE_PATH}")" ]]; then
+    echo "INFO: Portfile already up to date"
   else
-    # No PR requested, push to default branch
+    git add "${PORTFILE_PATH}"
+    git commit -m "${commit_msg}"
     echo "INFO: Pushing to ${PORT_REPO}..."
     "${push_args[@]}" push origin HEAD
     echo "INFO: Published diffscribe ${TAG} to ${PORT_REPO}"

@@ -32,6 +32,24 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Resolve Tag
+        id: release
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ inputs.release_tag }}" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Validate Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ steps.release.outputs.tag }}"
+          if ! gh release view "${tag}" --json tagName >/dev/null 2>&1; then
+            echo "::error::Release ${tag} not found. Please specify an existing release tag."
+            exit 1
+          fi
+          echo "Validated release: ${tag}"
       - name: Install MacPorts
         run: |
           curl -LO "https://github.com/macports/macports-base/releases/download/v2.10.5/MacPorts-2.10.5-15-Sequoia.pkg"
@@ -41,14 +59,6 @@ jobs:
         run: |
           sudo port -N selfupdate
           sudo port -N install yq gettext
-      - name: Resolve Tag
-        id: release
-        run: |
-          if [[ "${{ github.event_name }}" == "release" ]]; then
-            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=${{ inputs.release_tag }}" >> "$GITHUB_OUTPUT"
-          fi
       - name: Import GPG
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v6
@@ -78,10 +88,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gettext jq yq
       - name: Resolve Tag
         id: release
         run: |
@@ -90,6 +96,20 @@ jobs:
           else
             echo "tag=${{ inputs.release_tag }}" >> "$GITHUB_OUTPUT"
           fi
+      - name: Validate Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ steps.release.outputs.tag }}"
+          if ! gh release view "${tag}" --json tagName >/dev/null 2>&1; then
+            echo "::error::Release ${tag} not found. Please specify an existing release tag."
+            exit 1
+          fi
+          echo "Validated release: ${tag}"
+      - name: Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gettext jq yq
       - name: Import GPG
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v6
