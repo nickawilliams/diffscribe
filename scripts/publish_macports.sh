@@ -36,6 +36,7 @@ if [[ ! -x "${RENDER_SCRIPT}" ]]; then
 fi
 
 mkdir -p "$(dirname "${RENDERED_PORTFILE}")"
+RENDERED_PORTFILE="$(cd "$(dirname "${RENDERED_PORTFILE}")" && pwd)/$(basename "${RENDERED_PORTFILE}")"
 
 echo "INFO: Rendering Portfile for ${TAG}..."
 "${RENDER_SCRIPT}" "${TAG}" "${RENDERED_PORTFILE}"
