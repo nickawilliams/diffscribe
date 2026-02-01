@@ -274,6 +274,46 @@ func BenchmarkGenerateCommitMessages(b *testing.B) {
 	}
 }
 
+func TestBuildResponseFormat(t *testing.T) {
+	tests := []struct {
+		name     string
+		quantity int
+		wantMax  int
+	}{
+		{"positive quantity", 5, 5},
+		{"zero quantity defaults to 1", 0, 1},
+		{"negative quantity defaults to 1", -1, 1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rf := buildResponseFormat(tt.quantity)
+			if rf == nil {
+				t.Fatal("expected non-nil response format")
+			}
+			if rf.Type != "json_schema" {
+				t.Errorf("expected type json_schema, got %s", rf.Type)
+			}
+			props := rf.JSONSchema.Schema.Properties["suggestions"]
+			if props.MaxItems != tt.wantMax {
+				t.Errorf("expected MaxItems=%d, got %d", tt.wantMax, props.MaxItems)
+			}
+		})
+	}
+}
+
+func TestOpenAIProviderCapabilities(t *testing.T) {
+	p := openAIProvider{}
+	caps := p.Capabilities()
+
+	if !caps.SupportsJSONSchema {
+		t.Error("expected SupportsJSONSchema to be true")
+	}
+	if !caps.SupportsMaxCompletionTokens {
+		t.Error("expected SupportsMaxCompletionTokens to be true")
+	}
+}
+
 func TestNewProvider(t *testing.T) {
 	tests := []struct {
 		name     string

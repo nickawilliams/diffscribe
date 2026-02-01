@@ -225,10 +225,13 @@ func mergeConfigIfExists(path string, verbose bool) {
 }
 
 func readConfigFile(cfg *viper.Viper, path string) error {
-	if ext := strings.ToLower(filepath.Ext(path)); ext != "" {
+	ext := strings.ToLower(filepath.Ext(path))
+	knownExt := ext == ".yaml" || ext == ".yml" || ext == ".json" || ext == ".toml"
+	if knownExt {
 		cfg.SetConfigFile(path)
 		return cfg.ReadInConfig()
 	}
+	// Treat files without known extensions (e.g., .diffscribe) as YAML
 	cfg.SetConfigType("yaml")
 	f, err := os.Open(path)
 	if err != nil {
