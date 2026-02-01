@@ -3,7 +3,7 @@
 [![Build Status][ci-image]][ci-url]
 [![Code Coverage][coverage-image]][coverage-url]
 
-`diffscribe` is a CLI that inspects your staged Git changes and asks an LLM to craft high-quality Conventional Commit messages for you. It plugs into your shell completion, so `git commit -m "" <TAB>` yields AI suggestions that respect whatever prefix you already typed.
+`diffscribe` is a CLI that inspects your staged Git changes and asks an LLM to craft high-quality commit messages for you. It plugs into your shell completion, so `git commit -m "" <TAB>` yields AI suggestions that respect whatever prefix you already typed. The default format is [Conventional Commits](https://www.conventionalcommits.org/), but you can customize it via the `--format` flag or config file.
 
 ## Installation
 
