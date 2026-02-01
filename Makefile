@@ -274,7 +274,7 @@ clean:
 test:
 	@echo "Running tests with coverage..."
 	@mkdir -p $(OUT_DIR)/coverage
-	@go test ./... -coverprofile=$(OUT_DIR)/coverage/coverage.out
+	@go test ./... -coverpkg=./cmd/...,./internal/... -coverprofile=$(OUT_DIR)/coverage/coverage.out
 	@go tool cover -func=$(OUT_DIR)/coverage/coverage.out | tail -n 1
 	@go run github.com/jandelgado/gcov2lcov@v1.1.1 -infile $(OUT_DIR)/coverage/coverage.out -outfile $(OUT_DIR)/coverage/lcov.info >/dev/null
 	@go tool cover -html=$(OUT_DIR)/coverage/coverage.out -o $(OUT_DIR)/coverage/index.html
