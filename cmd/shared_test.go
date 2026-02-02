@@ -275,70 +275,6 @@ func TestRequireLLMConfig(t *testing.T) {
 	}
 }
 
-func TestStubCandidates(t *testing.T) {
-	tests := []struct {
-		name   string
-		ctx    gitContext
-		prefix string
-		check  func([]string) bool
-		desc   string
-	}{
-		{
-			name:   "no prefix returns default suggestions",
-			ctx:    gitContext{Branch: "main", Paths: []string{"file.go"}},
-			prefix: "",
-			check: func(s []string) bool {
-				return len(s) == 5 && s[0] == "feat: file.go"
-			},
-			desc: "should return 5 suggestions starting with feat:",
-		},
-		{
-			name:   "prefix matching existing type",
-			ctx:    gitContext{Branch: "main", Paths: []string{"file.go"}},
-			prefix: "fix",
-			check: func(s []string) bool {
-				// Should have "fix: address issues in main" as one of the matches
-				for _, cand := range s {
-					if cand == "fix: address issues in main" {
-						return true
-					}
-				}
-				return false
-			},
-			desc: "should include fix: suggestion",
-		},
-		{
-			name:   "prefix with trailing space",
-			ctx:    gitContext{Branch: "feature", Paths: []string{"a.go", "b.go"}},
-			prefix: "feat: ",
-			check: func(s []string) bool {
-				// With trailing space, should prepend directly
-				return len(s) > 0
-			},
-			desc: "should handle trailing space in prefix",
-		},
-		{
-			name:   "multiple paths in summary",
-			ctx:    gitContext{Branch: "main", Paths: []string{"a.go", "b.go", "c.go", "d.go"}},
-			prefix: "",
-			check: func(s []string) bool {
-				// Should have ellipsis in summary
-				return len(s) == 5 && s[0] == "feat: a.go, b.go, c.go…"
-			},
-			desc: "should truncate paths with ellipsis",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := stubCandidates(tt.ctx, tt.prefix)
-			if !tt.check(got) {
-				t.Errorf("stubCandidates() %s, got %v", tt.desc, got)
-			}
-		})
-	}
-}
-
 func TestRun(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -684,7 +620,7 @@ func TestGenerateCandidates_FallsBackToStubs(t *testing.T) {
 	}
 }
 
-func TestGenerateCandidates_LLMErrorFallsBackToStubs(t *testing.T) {
+func TestGenerateCandidates_LLMErrorReturnsNil(t *testing.T) {
 	// Save original state
 	originalViper := viper.AllSettings()
 	defer func() {
@@ -720,11 +656,7 @@ func TestGenerateCandidates_LLMErrorFallsBackToStubs(t *testing.T) {
 
 	got := generateCandidates(ctx, "")
 
-	// Should fall back to stub candidates
-	if len(got) != 5 {
-		t.Errorf("generateCandidates() on LLM error should fall back to 5 stubs, got %d", len(got))
-	}
-	if len(got) >= 1 && !strings.HasPrefix(got[0], "feat:") {
-		t.Errorf("got[0] = %q, should start with 'feat:'", got[0])
+	if got != nil {
+		t.Errorf("generateCandidates() on LLM error should return nil, got %v", got)
 	}
 }

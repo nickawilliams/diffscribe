@@ -73,11 +73,9 @@ func generateCandidates(c gitContext, prefix string) []string {
 	}, cfg)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "diffscribe: LLM error:", err)
-	} else if len(msgs) > 0 {
-		return msgs
+		return nil
 	}
-
-	return stubCandidates(c, prefix)
+	return msgs
 }
 
 type templateData struct {
@@ -156,38 +154,6 @@ func requireLLMConfig(cfg llm.Config) error {
 		return errors.New("diffscribe: api_key is required (set --api-key or DIFFSCRIBE_API_KEY/OPENAI_API_KEY)")
 	}
 	return nil
-}
-
-func stubCandidates(c gitContext, prefix string) []string {
-	summary := joinLimit(c.Paths, 3)
-	suggestions := []string{
-		"feat: " + summary,
-		"fix: address issues in " + c.Branch,
-		"chore: update " + summary,
-		"refactor: simplify " + summary,
-		"docs: update docs for " + summary,
-	}
-
-	trimmed := strings.TrimSpace(prefix)
-	if trimmed == "" {
-		return suggestions
-	}
-
-	withPrefix := make([]string, 0, len(suggestions))
-	lowerPrefix := strings.ToLower(trimmed)
-	for _, cand := range suggestions {
-		if strings.HasPrefix(strings.ToLower(cand), lowerPrefix) {
-			withPrefix = append(withPrefix, cand)
-			continue
-		}
-		remainder := strings.TrimLeft(cand, " ")
-		if strings.HasSuffix(trimmed, " ") {
-			withPrefix = append(withPrefix, trimmed+remainder)
-		} else {
-			withPrefix = append(withPrefix, trimmed+" "+remainder)
-		}
-	}
-	return withPrefix
 }
 
 // runFunc is the function used to execute shell commands. It can be replaced in tests.
