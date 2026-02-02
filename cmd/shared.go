@@ -159,6 +159,9 @@ func requireLLMConfig(cfg llm.Config) error {
 // runFunc is the function used to execute shell commands. It can be replaced in tests.
 var runFunc = runCommand
 
+// commandTimeout is the maximum time to wait for a command to complete.
+var commandTimeout = 1500 * time.Millisecond
+
 func runCommand(name string, args ...string) string {
 	cmd := exec.Command(name, args...)
 	cmd.Env = os.Environ()
@@ -173,7 +176,7 @@ func runCommand(name string, args ...string) string {
 	}()
 	select {
 	case <-done:
-	case <-time.After(1500 * time.Millisecond):
+	case <-time.After(commandTimeout):
 		_ = cmd.Process.Kill()
 	}
 	return out.String()

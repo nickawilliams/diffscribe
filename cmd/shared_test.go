@@ -315,6 +315,23 @@ func TestRun(t *testing.T) {
 	}
 }
 
+func TestRunCommand_Timeout(t *testing.T) {
+	// Save and restore original timeout
+	originalTimeout := commandTimeout
+	defer func() { commandTimeout = originalTimeout }()
+
+	// Set a very short timeout
+	commandTimeout = 10 * time.Millisecond
+
+	// Run a command that will exceed the timeout
+	got := runCommand("sleep", "1")
+
+	// Should return whatever output was captured before kill (likely empty)
+	if got != "" {
+		t.Errorf("runCommand with timeout should return empty, got %q", got)
+	}
+}
+
 func TestNewLLMConfig(t *testing.T) {
 	// Save current viper state and restore after test
 	originalViper := viper.AllSettings()
