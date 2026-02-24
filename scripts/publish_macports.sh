@@ -54,6 +54,9 @@ if [[ -n "${GITHUB_TOKEN}" ]]; then
   push_args+=( -c http.extraHeader="${header}" )
 fi
 
+echo "INFO: Syncing fork with upstream..."
+gh repo sync "${PORT_REPO}" 2>&1 || echo "WARN: fork sync failed, continuing with current state"
+
 echo "INFO: Cloning ${PORT_REPO}..."
 "${clone_args[@]}" clone "${repo_url}" "${port_dir}"
 
