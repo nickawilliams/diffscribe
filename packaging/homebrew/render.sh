@@ -90,8 +90,8 @@ asset_path_for() {
 
 arm_asset="$(asset_path_for darwin arm64)"
 amd_asset="$(asset_path_for darwin amd64)"
-source_asset="${meta_binary}_${asset_version}_source.tar.gz"
 base_download_url="https://github.com/${repo_name}/releases/download/${TAG}"
+source_url="https://github.com/${repo_name}/archive/refs/tags/${TAG}.tar.gz"
 
 mkdir -p "$(dirname "${OUTPUT_PATH}")"
 
@@ -118,7 +118,19 @@ sha_of() {
 
 arm_sha="$(sha_of "${arm_asset}")"
 amd_sha="$(sha_of "${amd_asset}")"
-source_sha="$(sha_of "${source_asset}")"
+
+# Download GitHub's auto-generated source archive and hash it directly
+source_tarball="${tmp_dir}/source.tar.gz"
+auth_header=()
+token="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
+if [[ -n "${token}" ]]; then
+  auth_header=(-H "Authorization: Bearer ${token}")
+fi
+echo "› downloading ${source_url}" >&2
+curl -fsSL --retry 3 --retry-delay 2 "${auth_header[@]}" \
+  -o "${source_tarball}" \
+  "${source_url}"
+source_sha="$(shasum -a 256 "${source_tarball}" | awk '{print $1}')"
 
 escape_for_ruby() {
   local value="$1"
@@ -134,7 +146,7 @@ export ARM64_URL="${base_download_url}/${arm_asset}"
 export ARM64_SHA="${arm_sha}"
 export AMD64_URL="${base_download_url}/${amd_asset}"
 export AMD64_SHA="${amd_sha}"
-export SOURCE_URL="${base_download_url}/${source_asset}"
+export SOURCE_URL="${source_url}"
 export SOURCE_SHA="${source_sha}"
 export BINARY_NAME="${meta_binary}"
 
