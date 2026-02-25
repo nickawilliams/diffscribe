@@ -171,18 +171,9 @@ if [[ "${PORT_PULLREQUEST:-false}" == "true" ]]; then
   fork_owner="${PORT_REPO%%/*}"
   head_ref="${fork_owner}:${branch_name}"
 
-  # Check if branch already exists on remote
-  branch_exists=false
-  if git ls-remote --heads origin "${branch_name}" | grep -q "${branch_name}"; then
-    echo "INFO: Branch ${branch_name} already exists, updating..."
-    git fetch origin "${branch_name}"
-    git checkout "${branch_name}"
-    git reset --hard "origin/${branch_name}"
-    branch_exists=true
-  else
-    echo "INFO: Creating branch ${branch_name}..."
-    git checkout -b "${branch_name}"
-  fi
+  # Always create the branch fresh from the synced default branch
+  echo "INFO: Creating branch ${branch_name} from master..."
+  git checkout -b "${branch_name}"
 
   # Copy the Portfile to the branch
   mkdir -p "$(dirname "${PORTFILE_PATH}")"
@@ -195,12 +186,7 @@ if [[ "${PORT_PULLREQUEST:-false}" == "true" ]]; then
   fi
 
   git add "${PORTFILE_PATH}"
-  if [[ "${branch_exists}" == "true" ]]; then
-    # Amend existing commit to keep history squashed (MacPorts preference)
-    git commit --amend -m "${commit_msg}"
-  else
-    git commit -m "${commit_msg}"
-  fi
+  git commit -m "${commit_msg}"
   "${push_args[@]}" push --force-with-lease -u origin "${branch_name}"
   echo "INFO: Pushed to ${PORT_REPO}:${branch_name}"
 
