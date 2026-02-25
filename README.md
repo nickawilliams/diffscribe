@@ -7,42 +7,114 @@
 
 ## Installation
 
-Prerequisites: Go 1.21+ and an OpenAI-compatible API key.
+### Homebrew (macOS)
 
 ```sh
-# build and install the binary
-make install
-# (optional) install completions for all shells
-make install/completions/all
-# (optional) install the man page
-make install/man
+brew install nickawilliams/tap/diffscribe
 ```
 
-By default the binary is installed to `/usr/local/bin`. Override `PREFIX` if needed, e.g. `PREFIX=$HOME/.local/bin make install`.
+### MacPorts (macOS)
 
-### Shell integration
+```sh
+sudo port install diffscribe
+```
 
-After installing the binary, enable completion in your shell of choice.
+### Go
 
-- **Zsh**: add `source ~/.zsh/diffscribe.zsh` to your `.zshrc` (or enable the bundled Oh My Zsh plugin via `plugins+=(diffscribe)`).
-- **Bash**: ensure `~/.bash_completion.d/diffscribe.bash` is sourced from `.bashrc`.
-- **Fish**: completions auto-load from `~/.config/fish/completions/diffscribe.fish`.
+```sh
+go install github.com/nickawilliams/diffscribe@latest
+```
 
-Set `DIFFSCRIBE_STATUS=0` if you want to suppress the in-prompt “loading…” indicator.
+### Linux
 
-### Man page
+Download `.deb` or `.rpm` packages from the [latest release](https://github.com/nickawilliams/diffscribe/releases/latest), then install:
 
-Run `make install/man` (or `make install/all`) to copy `diffscribe(1)` into your manpath (defaults to `/usr/local/share/man/man1`). Afterwards you can type `man diffscribe` for a concise reference covering flags, environment variables, and config file locations. Regenerate the page after CLI changes with `make man`, which uses Cobra's `doc` helpers to emit `contrib/man/diffscribe.1`.
+```sh
+# Debian / Ubuntu (apt 1.1+)
+sudo apt install <url>.deb
+
+# Debian / Ubuntu (older apt)
+curl -LO <url>.deb && sudo dpkg -i diffscribe_*_amd64.deb
+
+# Fedora / RHEL
+sudo dnf install <url>.rpm
+```
+
+Replace `<url>` with the package link for your architecture from the release page.
+
+### From source
+
+Requires Go 1.25+.
+
+```sh
+make install              # binary only
+make install/all          # binary + shell completions + man page
+```
+
+The binary installs to `/usr/local/bin` by default. Override with `PREFIX`, e.g. `PREFIX=$HOME/.local make install`.
+
+## Quick start
+
+1. Set your API key:
+
+   ```sh
+   export DIFFSCRIBE_API_KEY="sk-..."
+   ```
+
+   Or use `OPENAI_API_KEY`, or pass `--llm-api-key` at runtime.
+
+2. Stage some changes and run:
+
+   ```sh
+   diffscribe
+   ```
+
+   diffscribe prints numbered commit message candidates to choose from.
+
+3. Optionally, provide a prefix to constrain suggestions:
+
+   ```sh
+   diffscribe "feat: add"
+   ```
+
+## Shell completion
+
+The real power of diffscribe is inline completion while writing commit messages. Install completions for your shell, then use `<TAB>` to trigger suggestions:
+
+```sh
+git commit -m "feat: " <TAB>
+```
+
+Whatever you type after `-m` becomes the prefix automatically.
+
+### Installing completions
+
+Homebrew and MacPorts install completions automatically. For other installation methods:
+
+```sh
+make install/completions/all    # all shells at once
+make install/completions/zsh    # zsh only
+make install/completions/bash   # bash only
+make install/completions/fish   # fish only
+```
+
+### Enabling completions
+
+- **Zsh** — add `source ~/.zsh/diffscribe.zsh` to your `.zshrc`, or enable the bundled Oh My Zsh plugin: `plugins+=(diffscribe)`.
+- **Bash** — ensure `~/.bash_completion.d/diffscribe.bash` is sourced from `.bashrc`.
+- **Fish** — completions auto-load from `~/.config/fish/completions/diffscribe.fish`.
+
+Set `DIFFSCRIBE_STATUS=0` to suppress the in-prompt loading indicator.
 
 ## Configuration
 
-Provide an API key via `DIFFSCRIBE_API_KEY` or `OPENAI_API_KEY`, or pass `--llm-api-key` at runtime. Configuration lives in `.diffscribe{,.yaml,.toml,.json}`—we merge files in this precedence order:
+Configuration lives in `.diffscribe{,.yaml,.toml,.json}` and is merged in this precedence order:
 
 1. `$XDG_CONFIG_HOME/diffscribe/.diffscribe*` (or `$HOME/.config/diffscribe`)
 2. `$HOME/.diffscribe*`
 3. `./.diffscribe*` (per-project)
 
-Each file only overrides the keys it specifies, so global defaults flow into project configs. LLM settings sit under an `llm` block, for example:
+Each file only overrides the keys it specifies, so global defaults flow into project-level configs. LLM settings sit under an `llm` block:
 
 ```yaml
 llm:
@@ -55,30 +127,79 @@ llm:
   maxCompletionTokens: 512
 ```
 
-## Usage
+### Flags
 
-Stage your changes, then let diffscribe suggest a commit message:
+| Flag                          | Description                       | Default              |
+| ----------------------------- | --------------------------------- | -------------------- |
+| `--llm-api-key`               | API key                           | —                    |
+| `--llm-provider`              | LLM provider                      | `openai`             |
+| `--llm-model`                 | Model identifier                  | `gpt-4o-mini`        |
+| `--llm-base-url`              | API base URL                      | OpenAI               |
+| `--llm-temperature`           | Sampling temperature              | `1`                  |
+| `--llm-max-completion-tokens` | Max response tokens               | `512`                |
+| `--quantity`                  | Number of suggestions             | `5`                  |
+| `--format`                    | Commit message format description | Conventional Commits |
+| `--system-prompt`             | Override the system prompt        | —                    |
+| `--user-prompt`               | Override the user prompt          | —                    |
+| `--config`                    | Explicit config file path         | —                    |
 
-```sh
-# show candidates in the terminal
-diffscribe
+### Environment variables
 
-# complete inline while typing
-git commit -m "feat: "<TAB>
+| Variable              | Description                              |
+| --------------------- | ---------------------------------------- |
+| `DIFFSCRIBE_API_KEY`  | API key (takes precedence)               |
+| `OPENAI_API_KEY`      | API key (fallback)                       |
+| `DIFFSCRIBE_STATUS`   | Set to `0` to hide the loading indicator |
+| `DIFFSCRIBE_QUANTITY` | Override suggestion count in completions |
+
+### Using other providers
+
+Any OpenAI-compatible API works. Point `--llm-base-url` (or the config equivalent) at your provider:
+
+```yaml
+llm:
+  provider: openai
+  baseUrl: https://api.anthropic.com/v1/chat/completions
+  model: claude-sonnet-4-6
 ```
 
-The CLI accepts an optional prefix: `diffscribe "feat: add"` returns suggestions beginning with that text. When used through shell completion, whatever you type after `-m` becomes the prefix automatically.
+## Man page
+
+A man page is available after installation:
+
+```sh
+man diffscribe
+```
+
+Homebrew and MacPorts install it automatically. For other methods, run `make install/man`.
 
 ## Development
 
-Run the test suite (including completion harnesses):
+### Building from source
 
 ```sh
-make test            # Go unit tests + coverage
-make test/completions  # Bash, Zsh, Fish completion tests
+make build    # outputs to .out/build/diffscribe
 ```
 
-To rebuild the binary: `make build`. Use `make help` to see all targets.
+### Running tests
+
+```sh
+make test               # Go unit tests + coverage
+make test/completions   # Bash, Zsh, Fish completion tests
+```
+
+### Other useful targets
+
+```sh
+make lint       # run golangci-lint
+make format     # format code and run go generate
+make prep       # format + tidy (pre-commit prep)
+make help       # list all available targets
+```
+
+## License
+
+[BSD 3-Clause](LICENSE.md)
 
 [ci-image]: https://img.shields.io/github/actions/workflow/status/nickawilliams/diffscribe/release.yaml?logo=GitHub&logoColor=white
 [ci-url]: https://github.com/nickawilliams/diffscribe/actions/workflows/release.yaml
