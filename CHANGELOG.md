@@ -1,5 +1,16 @@
 # Changelog
 
+## [v0.2.0](https://github.com/nickawilliams/diffscribe/compare/395095eb986c48cec3dc036bb4892700c5c99961...v0.2.0) - 2026-02-25
+
+### New Features
+
+- Improve output format for commit message candidates - ([2e6ef3f](https://github.com/nickawilliams/diffscribe/commit/2e6ef3f401badcbbc7e40d489fe009f1746813f2))
+- Removed fallback stubs to ensure completions always come from an LLM - ([5e6e672](https://github.com/nickawilliams/diffscribe/commit/5e6e672d3e57edd52f016c3f2d46010f2f19f58c))
+
+### Improvements
+
+- Improve runCommand by allowing customizable timeout adjustments - ([1cfdc13](https://github.com/nickawilliams/diffscribe/commit/1cfdc13d29f08b0abc272ea764caa9435e351b95))
+
 ## [v0.1.0](https://github.com/nickawilliams/diffscribe/compare/e1a422f9980850551eeaffa116015d187e8e06b0...v0.1.0) - 2026-01-20
 
 ### New Features
