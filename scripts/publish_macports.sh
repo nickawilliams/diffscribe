@@ -190,11 +190,17 @@ if [[ "${PORT_PULLREQUEST:-false}" == "true" ]]; then
   "${push_args[@]}" push --force-with-lease -u origin "${branch_name}"
   echo "INFO: Pushed to ${PORT_REPO}:${branch_name}"
 
-  # Check for existing open PR from this branch
-  existing_pr=$(gh pr list --repo "${upstream_repo}" --head "${head_ref}" --state open --json number,url --jq '.[0] // empty')
+  # Check for existing PR from this branch (any state)
+  existing_pr=$(gh pr list --repo "${upstream_repo}" --head "${head_ref}" --state all --json number,url,state --jq '.[0] // empty')
   if [[ -n "${existing_pr}" ]]; then
     pr_url=$(echo "${existing_pr}" | jq -r '.url')
-    echo "INFO: Existing PR updated: ${pr_url}"
+    pr_state=$(echo "${existing_pr}" | jq -r '.state')
+    if [[ "${pr_state}" == "MERGED" ]]; then
+      echo "ERROR: A PR for ${version} has already been merged: ${pr_url}" >&2
+      popd >/dev/null
+      exit 1
+    fi
+    echo "INFO: Existing PR found, updated by push: ${pr_url}"
     popd >/dev/null
     exit 0
   fi
