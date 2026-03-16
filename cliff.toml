@@ -31,7 +31,7 @@ body = """
 - **{{ scope | upper_first }}:** {{ self::print_commit_body(commit=scope_commits | first) }}
 {% else -%}
 - **{{ scope | upper_first }}**
-{% for commit in scope_commits %}
+{%- for commit in scope_commits %}
 {{ "  " }}- {{ self::print_commit_body(commit=commit) }}
 {%- endfor %}
 {% endif -%}
