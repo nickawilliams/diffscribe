@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased](https://github.com/nickawilliams/diffscribe/compare/3161c1f3c666f55e9796cf0df36510f11bb808a2...HEAD)
+
+### New Features
+
+- Added a `--status` flag for showing configuration and validating the API key - ([ddeedf8](https://github.com/nickawilliams/diffscribe/commit/ddeedf880eaf0312a6894ac73ecace007feb2262))
+
 ## [v0.2.0](https://github.com/nickawilliams/diffscribe/compare/395095eb986c48cec3dc036bb4892700c5c99961...v0.2.0) - 2026-02-25
 
 ### New Features
@@ -11,7 +17,7 @@
 
 - Improve runCommand by allowing customizable timeout adjustments - ([1cfdc13](https://github.com/nickawilliams/diffscribe/commit/1cfdc13d29f08b0abc272ea764caa9435e351b95))
 
-## [v0.1.0](https://github.com/nickawilliams/diffscribe/compare/e1a422f9980850551eeaffa116015d187e8e06b0...v0.1.0) - 2026-01-20
+## [v0.1.0](https://github.com/nickawilliams/diffscribe/compare/c2552af1c27c2763e7943d46cc761c1412fcd6cb...v0.1.0) - 2026-01-20
 
 ### New Features
 
@@ -53,4 +59,6 @@
 ### Fixes
 
 - **Completions:** Enhance status check logic for commit message completion - ([41632dc](https://github.com/nickawilliams/diffscribe/commit/41632dc860c8b81fe9e905083ef177eb4ed3e5fb))
+
+## [v0.0.0](https://github.com/nickawilliams/diffscribe/compare/e1a422f9980850551eeaffa116015d187e8e06b0...v0.0.0) - 2025-12-11
 

@@ -22,16 +22,9 @@ PORTFILE := packaging/macports/Portfile
 OUT_DIR := .out
 BUILD_BIN := $(OUT_DIR)/build/$(BINARY)
 
-export GOBIN ?= $(CURDIR)/.cache/go/bin
 export CARGO_HOME ?= $(CURDIR)/.cache/cargo
 
 GO ?= go
-GOLANGCI_LINT := $(GOBIN)/golangci-lint
-GOLANGCI_LINT_VERSION ?= $(shell $(GO) list -m -f '{{.Version}}' github.com/golangci/golangci-lint 2>/dev/null)
-GOLANGCI_LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint@$(if $(GOLANGCI_LINT_VERSION),$(GOLANGCI_LINT_VERSION),latest)
-GORELEASER := $(GOBIN)/goreleaser
-GORELEASER_VERSION ?= $(shell $(GO) list -m -f '{{.Version}}' github.com/goreleaser/goreleaser/v2 2>/dev/null)
-GORELEASER_PKG := github.com/goreleaser/goreleaser/v2@$(if $(GORELEASER_VERSION),$(GORELEASER_VERSION),latest)
 GIT_CLIFF ?= git-cliff
 VERSION_PKG := github.com/nickawilliams/diffscribe/internal/version
 GIT_TAG := $(shell git describe --tags --abbrev=0 2>/dev/null || echo v0.0.0)
@@ -110,7 +103,7 @@ dist:
 	PKG_LICENSE="$(PKG_LICENSE)" \
 	PKG_MAINTAINER_NAME="$(PKG_MAINTAINER_NAME)" \
 	PKG_MAINTAINER_EMAIL="$(PKG_MAINTAINER_EMAIL)" \
-		$(GORELEASER) release --snapshot --clean
+		$(GO) tool goreleaser release --snapshot --clean
 
 release:
 	@echo "Building release artifacts via GoReleaser..."
@@ -122,7 +115,7 @@ release:
 	PKG_LICENSE="$(PKG_LICENSE)" \
 	PKG_MAINTAINER_NAME="$(PKG_MAINTAINER_NAME)" \
 	PKG_MAINTAINER_EMAIL="$(PKG_MAINTAINER_EMAIL)" \
-		$(GORELEASER) release --clean
+		$(GO) tool goreleaser release --clean
 
 ## Render and publish the MacPorts Portfile to the ports repository
 publish/macports:
@@ -134,18 +127,6 @@ publish/homebrew:
 
 ## Install Go module and tooling dependencies
 deps:
-	@if ! command -v $(GOLANGCI_LINT) >/dev/null 2>&1; then \
-		echo "Installing golangci-lint ($(if $(GOLANGCI_LINT_VERSION),$(GOLANGCI_LINT_VERSION),latest))..."; \
-		$(GO) install $(GOLANGCI_LINT_PKG); \
-	else \
-		echo "INFO: golangci-lint already installed ($$(command -v $(GOLANGCI_LINT)))"; \
-	fi
-	@if ! command -v $(GORELEASER) >/dev/null 2>&1; then \
-		echo "Installing goreleaser ($(if $(GORELEASER_VERSION),$(GORELEASER_VERSION),latest))..."; \
-		$(GO) install $(GORELEASER_PKG); \
-	else \
-		echo "INFO: goreleaser already installed ($$(command -v $(GORELEASER)))"; \
-	fi
 	@if ! command -v $(GIT_CLIFF) >/dev/null 2>&1; then \
 		echo "Installing git-cliff (requires cargo)..."; \
 		if command -v cargo >/dev/null 2>&1; then \
@@ -276,7 +257,7 @@ test:
 	@mkdir -p $(OUT_DIR)/coverage
 	@go test ./... -coverpkg=./cmd/...,./internal/... -coverprofile=$(OUT_DIR)/coverage/coverage.out
 	@go tool cover -func=$(OUT_DIR)/coverage/coverage.out | tail -n 1
-	@go run github.com/jandelgado/gcov2lcov@v1.1.1 -infile $(OUT_DIR)/coverage/coverage.out -outfile $(OUT_DIR)/coverage/lcov.info >/dev/null
+	@$(GO) tool gcov2lcov -infile $(OUT_DIR)/coverage/coverage.out -outfile $(OUT_DIR)/coverage/lcov.info >/dev/null
 	@go tool cover -html=$(OUT_DIR)/coverage/coverage.out -o $(OUT_DIR)/coverage/index.html
 	@echo "Coverage (LCOV): $(OUT_DIR)/coverage/lcov.info"
 	@echo "Coverage (HTML): $(OUT_DIR)/coverage/index.html"
@@ -304,7 +285,7 @@ bench:
 ## Run golangci-lint
 lint:
 	@echo "Running golangci-lint..."
-	@$(GOLANGCI_LINT) run
+	@$(GO) tool golangci-lint run
 
 ## Prepare the codebase for a new commit
 prep: format

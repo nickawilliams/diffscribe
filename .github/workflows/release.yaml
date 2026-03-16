@@ -5,7 +5,6 @@ on:
     branches: [main]
 
 env:
-  GOBIN: ${{ github.workspace }}/.cache/go/bin
   CARGO_HOME: ${{ github.workspace }}/.cache/cargo
 
 permissions:
@@ -34,15 +33,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - name: Cache - Go Tools
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ env.GOBIN }}
-            ~/.cache/golangci-lint
-          key: ${{ runner.os }}-gotools-${{ hashFiles('go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-gotools-
       - name: Cache - Cargo Binaries
         uses: actions/cache@v4
         with:
@@ -55,7 +45,6 @@ jobs:
             ${{ runner.os }}-cargo-
       - name: Cache - Update PATH
         run: |
-          echo "${{ env.GOBIN }}" >> "$GITHUB_PATH"
           echo "${{ env.CARGO_HOME }}/bin" >> "$GITHUB_PATH"
       - name: Dependencies
         run: make deps
@@ -164,15 +153,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - name: Cache - Go Tools
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ env.GOBIN }}
-            ~/.cache/golangci-lint
-          key: ${{ runner.os }}-gotools-${{ hashFiles('go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-gotools-
       - name: Cache - Cargo Binaries
         uses: actions/cache@v4
         with:
@@ -185,7 +165,6 @@ jobs:
             ${{ runner.os }}-cargo-
       - name: Cache - Update PATH
         run: |
-          echo "${{ env.GOBIN }}" >> "$GITHUB_PATH"
           echo "${{ env.CARGO_HOME }}/bin" >> "$GITHUB_PATH"
       - name: Dependencies
         run: make deps
