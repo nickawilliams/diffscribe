@@ -24,6 +24,7 @@ type Provider interface {
 	Capabilities() ProviderCapabilities
 	BuildRequest(ctx context.Context, cfg Config, messages []Message) (*http.Request, error)
 	ParseResponse(resp *http.Response) ([]string, error)
+	Validate(ctx context.Context, client *http.Client, cfg Config) error
 }
 
 func newProvider(cfg Config) (Provider, error) {

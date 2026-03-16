@@ -56,6 +56,7 @@ Rules:
 )
 
 var versionFlag bool
+var statusFlag bool
 
 var rootCmd = &cobra.Command{
 	Use:   "diffscribe [prefix]",
@@ -98,6 +99,9 @@ llm.api_key, llm.provider, llm.model, etc.).
 			fmt.Printf("diffscribe %s\n", version.String())
 			return nil
 		}
+		if statusFlag {
+			return runStatus()
+		}
 		ctx, err := collectContext()
 		if err != nil {
 			return err
@@ -127,6 +131,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default searches diffscribe.{yaml,json,toml})")
 	rootCmd.PersistentFlags().BoolVarP(&versionFlag, "version", "v", false, "Show version information and exit")
+	rootCmd.PersistentFlags().BoolVar(&statusFlag, "status", false, "Show configuration and validate the API key")
 	rootCmd.PersistentFlags().String("llm-api-key", "", "LLM provider API key")
 	rootCmd.PersistentFlags().String("llm-provider", defaultProvider, "LLM provider (openai, openrouter, etc.)")
 	rootCmd.PersistentFlags().String("llm-model", defaultModel, "LLM model identifier")

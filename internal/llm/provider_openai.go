@@ -11,6 +11,110 @@ import (
 	"strings"
 )
 
+func (openAIProvider) Validate(ctx context.Context, client *http.Client, cfg Config) error {
+	if err := openAICheckAuth(ctx, client, cfg); err != nil {
+		return err
+	}
+	return openAICheckCompletions(ctx, client, cfg)
+}
+
+// openAICheckAuth sends a GET to the models endpoint to verify the API key.
+func openAICheckAuth(ctx context.Context, client *http.Client, cfg Config) error {
+	modelsURL := openAIDeriveModelsURL(cfg.BaseURL)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, modelsURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to build request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.APIKey)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("connection failed: %w", err)
+	}
+	defer resp.Body.Close()
+	io.Copy(io.Discard, resp.Body)
+
+	switch {
+	case resp.StatusCode == http.StatusUnauthorized:
+		return fmt.Errorf("invalid API key (HTTP 401)")
+	case resp.StatusCode == http.StatusForbidden:
+		return fmt.Errorf("API key lacks permission (HTTP 403)")
+	case resp.StatusCode >= 400:
+		return fmt.Errorf("API returned HTTP %d", resp.StatusCode)
+	}
+	return nil
+}
+
+// openAICheckCompletions sends a minimal completion request to verify the key
+// can generate completions (catches quota exhaustion, billing issues, etc).
+func openAICheckCompletions(ctx context.Context, client *http.Client, cfg Config) error {
+	payload := openAIRequest{
+		Model:               cfg.Model,
+		Messages:            []openAIMessage{{Role: "user", Content: "hi"}},
+		MaxCompletionTokens: 1,
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to build request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, cfg.BaseURL, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("failed to build request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+cfg.APIKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("connection failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return openAIParseError(resp.StatusCode, bodyBytes)
+	}
+	io.Copy(io.Discard, resp.Body)
+	return nil
+}
+
+// openAIDeriveModelsURL converts a chat completions URL into the corresponding
+// models list endpoint. For example:
+//
+//	https://api.openai.com/v1/chat/completions → https://api.openai.com/v1/models
+func openAIDeriveModelsURL(baseURL string) string {
+	u := strings.TrimRight(baseURL, "/")
+	if before, _, ok := strings.Cut(u, "/v1/"); ok {
+		return before + "/v1/models"
+	}
+	if i := strings.LastIndex(u, "/"); i > len("https://") {
+		return u[:i] + "/models"
+	}
+	return u + "/models"
+}
+
+// openAIParseError extracts a readable error from the OpenAI error response
+// body, falling back to the HTTP status code if parsing fails.
+func openAIParseError(statusCode int, body []byte) error {
+	var apiErr struct {
+		Error struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(body, &apiErr); err == nil && apiErr.Error.Code != "" {
+		switch apiErr.Error.Code {
+		case "insufficient_quota":
+			return fmt.Errorf("quota exceeded (check billing at https://platform.openai.com/settings/organization/billing)")
+		default:
+			return fmt.Errorf("%s: %s", apiErr.Error.Code, apiErr.Error.Message)
+		}
+	}
+	return fmt.Errorf("completion request failed (HTTP %d)", statusCode)
+}
+
 type openAIProvider struct{}
 
 func (openAIProvider) Capabilities() ProviderCapabilities {
