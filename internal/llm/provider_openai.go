@@ -33,7 +33,7 @@ func openAICheckAuth(ctx context.Context, client *http.Client, cfg Config) error
 		return fmt.Errorf("connection failed: %w", err)
 	}
 	defer resp.Body.Close()
-	io.Copy(io.Discard, resp.Body)
+	_, _ = io.Copy(io.Discard, resp.Body)
 
 	switch {
 	case resp.StatusCode == http.StatusUnauthorized:
@@ -76,7 +76,7 @@ func openAICheckCompletions(ctx context.Context, client *http.Client, cfg Config
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		return openAIParseError(resp.StatusCode, bodyBytes)
 	}
-	io.Copy(io.Discard, resp.Body)
+	_, _ = io.Copy(io.Discard, resp.Body)
 	return nil
 }
 
