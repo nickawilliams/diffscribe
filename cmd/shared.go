@@ -55,7 +55,7 @@ func generateCandidates(c gitContext, prefix string) []string {
 		Summary:    joinLimit(c.Paths, 3),
 		DiffLength: len(c.Diff),
 		Prefix:     prefix,
-		Format:     viper.GetString("format"),
+		Format:     resolveFormat(viper.GetString("format")),
 		Timestamp:  time.Now(),
 	}
 

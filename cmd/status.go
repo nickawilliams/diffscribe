@@ -25,6 +25,18 @@ func runStatus() error {
 	fmt.Printf("  Base URL:  %s\n", cfg.BaseURL)
 	fmt.Println()
 
+	rawFormat := viper.GetString("format")
+	fmt.Println("Format")
+	fmt.Printf("  Mode:     %s\n", rawFormat)
+	if resolved := resolveFormat(rawFormat); resolved != "" {
+		preview := resolved
+		if len(preview) > 200 {
+			preview = preview[:200] + "..."
+		}
+		fmt.Printf("  Preview:  %s\n", strings.ReplaceAll(preview, "\n", "\n            "))
+	}
+	fmt.Println()
+
 	fmt.Println("API Key")
 	if cfg.APIKey == "" {
 		fmt.Println("  Status:  not configured")
