@@ -1,5 +1,5 @@
 .nh
-.TH "DIFFSCRIBE" "1" "Feb 2026" "diffscribe" "User Commands"
+.TH "DIFFSCRIBE" "1" "Mar 2026" "diffscribe" "User Commands"
 
 .SH NAME
 diffscribe \- LLM-assisted git commit helper
@@ -21,7 +21,7 @@ typed.
 Config file (default searches diffscribe.{yaml,json,toml}).
 .TP
 \fB\-\-format\fP=\fIdescription\fP
-Commit message format description or template.
+Commit message format: "auto", a preset name (e.g. "conventional-commits"), "file:<path>", or a custom description. Default: auto
 .TP
 \fB\-\-llm\-api\-key\fP=\fIkey\fP
 LLM provider API key.
@@ -43,6 +43,9 @@ LLM sampling temperature. Default: 1
 .TP
 \fB\-\-quantity\fP=\fIn\fP
 Number of suggestions to request. Default: 5
+.TP
+\fB\-\-status\fP
+Show configuration and validate the API key.
 .TP
 \fB\-\-system\-prompt\fP=\fIprompt\fP
 LLM system prompt override.

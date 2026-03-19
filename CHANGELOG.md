@@ -1,10 +1,15 @@
 # Changelog
 
-## [Unreleased](https://github.com/nickawilliams/diffscribe/compare/3161c1f3c666f55e9796cf0df36510f11bb808a2...HEAD)
+## [v0.3.0](https://github.com/nickawilliams/diffscribe/compare/3161c1f3c666f55e9796cf0df36510f11bb808a2...v0.3.0) - 2026-03-19
 
 ### New Features
 
-- Added a `--status` flag for showing configuration and validating the API key - ([ddeedf8](https://github.com/nickawilliams/diffscribe/commit/ddeedf880eaf0312a6894ac73ecace007feb2262))
+- Add a `--status` flag for showing configuration and validating the API key - ([643ba95](https://github.com/nickawilliams/diffscribe/commit/643ba956bc78f0785cf8bced639b22ba1e1060fe))
+- Introduce an `auto` format option that enables project introspection to determine commit message format - ([c0def19](https://github.com/nickawilliams/diffscribe/commit/c0def19362c8596faf91d72b59625359c53430a2))
+
+### Fixes
+
+- Avoid compilation warnings by handling io.Copy return values in OpenAI checks - ([78c3565](https://github.com/nickawilliams/diffscribe/commit/78c3565bab88b955721fec72352c6caf86e65123))
 
 ## [v0.2.0](https://github.com/nickawilliams/diffscribe/compare/395095eb986c48cec3dc036bb4892700c5c99961...v0.2.0) - 2026-02-25
 
@@ -17,7 +22,7 @@
 
 - Improve runCommand by allowing customizable timeout adjustments - ([1cfdc13](https://github.com/nickawilliams/diffscribe/commit/1cfdc13d29f08b0abc272ea764caa9435e351b95))
 
-## [v0.1.0](https://github.com/nickawilliams/diffscribe/compare/c2552af1c27c2763e7943d46cc761c1412fcd6cb...v0.1.0) - 2026-01-20
+## [v0.1.0](https://github.com/nickawilliams/diffscribe/compare/e1a422f9980850551eeaffa116015d187e8e06b0...v0.1.0) - 2026-01-20
 
 ### New Features
 
@@ -26,7 +31,6 @@
 - Add prefix handling for commit message suggestions - ([26da7b4](https://github.com/nickawilliams/diffscribe/commit/26da7b4331e7946434d0677c6b1a16ab6dd88d6a))
 - Add version flag to display application version - ([4c94395](https://github.com/nickawilliams/diffscribe/commit/4c94395c8af491942197454e6dfb980424fdf54c))
 - **Completions**
-
   - Add Fish shell completion - ([da82127](https://github.com/nickawilliams/diffscribe/commit/da82127e499c339fa7ab6536ef8591be9dfc1243))
   - Add list and menu insert modes - ([15463ef](https://github.com/nickawilliams/diffscribe/commit/15463efbcca0d6360171eba93417530cd7ec9ba2))
   - Add stash-aware diffs for completions - ([f186c38](https://github.com/nickawilliams/diffscribe/commit/f186c38ae3ac06a4521f6e55ed979b89d433b7ba))
@@ -52,13 +56,10 @@
 - Consolidate zsh completion scripts into a single file - ([941e253](https://github.com/nickawilliams/diffscribe/commit/941e253f72d9472f91a740ca004a4b40462d5047))
 - Migrate to new GitHub username - ([dbd3e53](https://github.com/nickawilliams/diffscribe/commit/dbd3e5304ce7621bc63ca2d22d8d07540510a134))
 - **Completions**
-
   - Update `_diffscribe_set_status` for better output handling - ([4a17387](https://github.com/nickawilliams/diffscribe/commit/4a1738716096441d3b353c1931165154909192e3))
   - Simplified fish completions - ([eb475e0](https://github.com/nickawilliams/diffscribe/commit/eb475e0019e4f0d28b25b5da6dbea1b3a509487f))
 
 ### Fixes
 
 - **Completions:** Enhance status check logic for commit message completion - ([41632dc](https://github.com/nickawilliams/diffscribe/commit/41632dc860c8b81fe9e905083ef177eb4ed3e5fb))
-
-## [v0.0.0](https://github.com/nickawilliams/diffscribe/compare/e1a422f9980850551eeaffa116015d187e8e06b0...v0.0.0) - 2025-12-11
 
